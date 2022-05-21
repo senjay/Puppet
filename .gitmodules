@@ -1,0 +1,9 @@
+[submodule "Puppet/vendor/spdlog"]
+	path = Puppet/vendor/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "Puppet/vendor/GLFW"]
+	path = Puppet/vendor/GLFW
+	url = https://github.com/TheCherno/glfw
+[submodule "Puppet/vendor/imgui"]
+	path = Puppet/vendor/imgui
+	url = https://github.com/TheCherno/imgui.git

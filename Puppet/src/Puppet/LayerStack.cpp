@@ -1,0 +1,45 @@
+#include "PPpch.h"
+#include "LayerStack.h"
+namespace Puppet {
+
+	LayerStack::LayerStack()
+	{
+		m_LayerInsert = m_Layers.begin();
+	}
+
+	LayerStack::~LayerStack()
+	{
+		for (Layer* layer : m_Layers) delete layer;
+	}
+
+	// 在指定m_LayerInsert处添加一个数据
+	// emplace 不会产生临时数据
+	void LayerStack::PushLayer(Layer* layer)
+	{
+		m_LayerInsert = m_Layers.emplace(m_LayerInsert, layer);
+		layer->OnAttach();
+	}
+
+	void LayerStack::PushOverlay(Layer* overlay)
+	{
+		m_Layers.emplace_back(overlay);
+		overlay->OnAttach();
+	}
+
+	void LayerStack::PopLayer(Layer* layer)
+	{
+		// 销毁一个层，操作迭代器，优化效率
+		auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
+		if (it != m_Layers.end())
+		{
+			m_Layers.erase(it);
+			m_LayerInsert--;
+		}
+	}
+
+	void LayerStack::PopOverlay(Layer* overlay)
+	{
+		auto it = std::find(m_Layers.begin(), m_Layers.end(), overlay);
+		if (it != m_Layers.end()) m_Layers.erase(it);
+	}
+}
