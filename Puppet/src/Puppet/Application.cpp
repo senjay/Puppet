@@ -12,6 +12,9 @@ namespace Puppet {
 		s_Instance = this;
 		m_Window = std::unique_ptr<Window>(Window::Create());
 		m_Window->SetEventCallback(PP_BIND_EVENT_FN(Application::OnEvent));
+
+		m_ImGuiLayer = new ImGuiLayer();
+		PushOverlay(m_ImGuiLayer);
 	}
 	Application::~Application()
 	{
@@ -35,12 +38,13 @@ namespace Puppet {
 	{
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<WindowCloseEvent>(PP_BIND_EVENT_FN(Application::OnWindowClose));
+		//dispatcher.Dispatch<WindowResizeEvent>(PP_BIND_EVENT_FN(Application::OnWindowResize));
 		//层:事件的响应是反向的
 		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
 		{
-			(*it)->OnEvent(e);
-			if (e.m_Handled)//如果事件已经被处理，则停止
+			if (e.m_Handled)//如果事件已经被处理，则停止,需要先判断，可能是closewindow或者resize
 				break;
+			(*it)->OnEvent(e);
 		}
 	}
 	void Application::Run()
@@ -51,10 +55,18 @@ namespace Puppet {
 		{
 			glClearColor(1, 1, 1, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
+
 			for (Layer* layer : m_LayerStack)
 			{
 				layer->OnUpdate();
 			}
+
+			m_ImGuiLayer->Begin();
+			for (Layer* layer : m_LayerStack)
+			{
+				layer->OnRender();
+			}
+			m_ImGuiLayer->End();
 			m_Window->OnUpdate();
 		}
 	}

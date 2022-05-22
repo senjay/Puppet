@@ -6,8 +6,8 @@
 #include "Events/MouseEvent.h"
 #include "LayerStack.h"
 #include "Window.h"
-#include "Puppet/InputSystem.h"
-
+#include "InputSystem.h"
+#include "ImGui/ImGuiLayer.h"
 namespace Puppet {
 	class PUPPET_API Application
 	{
@@ -24,6 +24,7 @@ namespace Puppet {
 			bool OnWindowClose(WindowCloseEvent& e);
 			static Application* s_Instance;
 			std::unique_ptr<Window> m_Window;
+			ImGuiLayer* m_ImGuiLayer;
 			bool m_Running = true;
 			LayerStack m_LayerStack;
 	};

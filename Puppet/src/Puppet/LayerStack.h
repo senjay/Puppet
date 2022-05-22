@@ -28,7 +28,7 @@ namespace Puppet {
 	private:
 		/// 所有的层列表
 		std::vector<Layer*> m_Layers;
-		std::vector<Layer*>::iterator m_LayerInsert;
+		size_t m_LayerInsertIndex=0;
 	};
 }
 
