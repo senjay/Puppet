@@ -3,6 +3,8 @@
 #include "Puppet/Events/ApplicationEvent.h"
 #include "Puppet/Events/KeyEvent.h"
 #include "Puppet/Events/MouseEvent.h"
+#include "WindowsInput.h"
+#include "Puppet/InputSystem.h"
 #include <glad/glad.h>
 
 namespace Puppet {
@@ -32,6 +34,9 @@ namespace Puppet {
 	// step 3
 	void WindowsWindow::Init(const WindowProps& props)
 	{
+
+		Puppet::InputSystem::getInstance().initialize(new WindowsInput());
+
 		m_Data.Title = props.Title;
 		m_Data.Width = props.Width;
 		m_Data.Height = props.Height;

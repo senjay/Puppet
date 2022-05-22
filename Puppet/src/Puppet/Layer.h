@@ -5,7 +5,7 @@
 namespace Puppet {
 	/// Layer 可处理显示，也可以处理事件；
 	/// 在一个游戏中，层级可以用于显示不同的内容，不同的层级可以接收独立的事件
-	class HAZEL_API Layer
+	class PUPPET_API Layer
 	{
 	public:
 		// 当前层的名称

@@ -45,6 +45,7 @@ namespace Puppet {
 	}
 	void Application::Run()
 	{
+		
 		//‰÷»æ≤„¥”«∞Õ˘∫Û
 		while (m_Running)
 		{

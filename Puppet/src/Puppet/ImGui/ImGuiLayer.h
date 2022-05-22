@@ -6,7 +6,7 @@
 #include "Puppet/Events/MouseEvent.h"
 namespace Puppet {
 
-    class HAZEL_API ImGuiLayer : public Layer
+    class PUPPET_API ImGuiLayer : public Layer
     {
     public:
         ImGuiLayer();

@@ -6,9 +6,10 @@
 #include "Events/MouseEvent.h"
 #include "LayerStack.h"
 #include "Window.h"
+#include "Puppet/InputSystem.h"
 
 namespace Puppet {
-	class HAZEL_API Application
+	class PUPPET_API Application
 	{
 	public:
 			Application();

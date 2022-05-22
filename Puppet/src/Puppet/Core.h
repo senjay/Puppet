@@ -2,9 +2,9 @@
 
 #ifdef  PP_PLATFORM_WINDOWS
 #ifdef  PP_BUILD_DLL
-	#define HAZEL_API __declspec(dllexport)
+	#define PUPPET_API __declspec(dllexport)
 #else
-	#define HAZEL_API __declspec(dllimport)
+	#define PUPPET_API __declspec(dllimport)
 #endif //  PP_BUILD_DLL
 #else
 	#error Only Windows Now

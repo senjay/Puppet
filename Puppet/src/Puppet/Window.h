@@ -23,7 +23,7 @@ namespace Puppet {
 	};
 
 	// 定义窗口基类
-	class HAZEL_API Window
+	class PUPPET_API Window
 	{
 	public:
 		// 窗口事件回调函数类型
@@ -40,6 +40,7 @@ namespace Puppet {
 		virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
 		virtual void SetVSync(bool enable) = 0;
 		virtual bool IsVSync() const = 0;
+		virtual void* GetNativeWindow()const = 0;
 
 		// 这里定义一个静态的Create方法，参数为WindowProps，全部使用的默认数据
 		// 这个方法在WindowsWindow.cpp里面实现

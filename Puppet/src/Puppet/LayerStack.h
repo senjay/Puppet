@@ -6,7 +6,7 @@
 namespace Puppet {
 
 	/// 用于处理层的管理关系
-	class HAZEL_API LayerStack
+	class PUPPET_API LayerStack
 	{
 	public:
 		LayerStack();

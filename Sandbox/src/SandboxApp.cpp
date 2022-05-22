@@ -10,12 +10,17 @@ public:
 
 	void OnUpdate() override
 	{
-		PP_INFO("ExampleLayer::Update");
+		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::Tab))
+			PP_INFO("TAB pressed!");
 	}
 
 	void OnEvent(Puppet::Event& event) override
 	{
-		PP_TRACE("{0}", event);
+		if (event.GetEventType() == Puppet::EventType::KeyPressed)
+		{
+			Puppet::KeyPressedEvent& e = (Puppet::KeyPressedEvent&)event;
+			PP_TRACE("{0}", (char)e.GetKeyCode());
+		}
 	}
 
 };
@@ -25,7 +30,7 @@ class Sandbox :public Puppet::Application
 public:
 	Sandbox()
 	{
-		//PushLayer(new ExampleLayer());
+		PushLayer(new ExampleLayer());
 		PushLayer(new Puppet::ImGuiLayer());
 	}
 	~Sandbox(){}
