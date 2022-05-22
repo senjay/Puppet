@@ -9,6 +9,7 @@ bin-int/
 **.vcxproj
 **.vcxproj.filters
 **.vcxproj.user
+**.drawio
 
 # User-specific files
 *.rsuser
