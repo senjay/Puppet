@@ -57,7 +57,7 @@ namespace Puppet {
 		template<typename T>
 		bool Dispatch(EventFn<T> func)
 		{	
-			if (!m_Event.m_Handled)
+			if (m_Event.m_Handled)
 				return false;
 			if (m_Event.GetEventType() == T::GetStaticType())
 			{
