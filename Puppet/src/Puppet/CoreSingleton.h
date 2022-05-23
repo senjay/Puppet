@@ -2,15 +2,15 @@
 #include <type_traits>
 namespace Puppet {
 
-	template<typename T>
+	template<typename Derived >
 	class PUPPET_API CoreSingleton 
 	{
 	protected:
 		CoreSingleton() = default;
 	public:
-		static T& getInstance()noexcept(std::is_nothrow_constructible<T>::value)
+		static Derived& getInstance()noexcept(std::is_nothrow_constructible<Derived>::value)
 		{
-			static T instance;
+			static Derived instance;
 			return instance;
 		}
 		virtual ~CoreSingleton() noexcept = default;
