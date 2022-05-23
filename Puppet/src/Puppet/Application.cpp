@@ -64,7 +64,7 @@ namespace Puppet {
 			m_ImGuiLayer->Begin();
 			for (Layer* layer : m_LayerStack)
 			{
-				layer->OnRender();
+				layer->OnUIRender();
 			}
 			m_ImGuiLayer->End();
 			m_Window->OnUpdate();

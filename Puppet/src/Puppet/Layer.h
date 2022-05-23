@@ -16,9 +16,10 @@ namespace Puppet {
 		virtual void OnAttach() {}
 		// 当层被取消的时候
 		virtual void OnDetach() {}
-		// update
+		// 渲染update
 		virtual void OnUpdate() {}
-		virtual void OnRender() {}
+		// UI渲染
+		virtual void OnUIRender() {}
 		// 当前层有事件的时候
 		virtual void OnEvent(Event& event) {}
 		// 当前层的名字

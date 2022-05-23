@@ -15,7 +15,7 @@ namespace Puppet {
         virtual void OnAttach() override;
         virtual void OnDetach()override;
         virtual void OnEvent(Event& event)override {}
-        virtual void OnRender()override { OnImGuiRender(); }
+        virtual void OnUIRender()override { OnImGuiRender(); }
         void OnImGuiRender();
         void Begin();
         void End();
