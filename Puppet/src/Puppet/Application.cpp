@@ -1,7 +1,7 @@
 #include "PPpch.h"
 #include "Application.h"
 #include <glad/glad.h>
-
+#include "Platform/OpenGL/OpenGLBuffer.h"
 namespace Puppet {
 
 	Application* Application::s_Instance = nullptr;
@@ -16,46 +16,62 @@ namespace Puppet {
 		PushOverlay(m_ImGuiLayer);
 
 		uint32_t indices[3] = { 0,1,2 };
-		float vertices[9] = {
-		-0.5, -0.5, 0,
-		0.5, -0.5, 0,
-		0, 0.5, 0
+		float vertices[3*7] = {
+			-0.5, -0.5, 0,	1, 0, 0, 1,
+			 0.5, -0.5, 0,	0, 1, 0, 1,
+			  0	,  0.5, 0,	0, 0, 1, 1,
 		};
 
 		m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
 		m_VertexBuffer->Bind();
-		//glGenBuffers(1, &m_VertexBuffer);
-		//glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+
+		{
+			BufferLayout layout = {
+			{ShaderDataType::Float3,"a_Position"},
+			{ShaderDataType::Float4,"a_Color"},
+			};
+			m_VertexBuffer->SetLayout(layout);
+		}
 
 		glGenVertexArrays(1, &m_VertexArray);
 		glBindVertexArray(m_VertexArray);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+		int index = 0;
+		const auto& layout = m_VertexBuffer->GetLayout();
+		for (const auto& element : layout)
+		{
+			glEnableVertexAttribArray(index);
+			glVertexAttribPointer(index,
+				element.GetComponentCount(),
+				ShaderDataTypeToOpenGLBaseType(element.Type),
+				element.Normalized ? GL_TRUE : GL_FALSE,
+				layout.GetStride(),
+				(const void*)element.Offset);
+			++index;
+		}
 
 		m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices)));
 		m_IndexBuffer->Bind();
-		//glGenBuffers(1, &m_IndexBuffer);
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
-		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 
 		std::string vertexSrc = R"(
 			#version 330 core
 			layout(location=0) in vec3 a_Position;
-			out vec3 v_Position;
+			layout(location=1) in vec4 a_Color;
+			out vec4 v_Color;
 			void main()
 			{
 				gl_Position=vec4(a_Position,1.0);
-				v_Position=a_Position;
+				v_Color=a_Color;
 			}
 		)";
 		std::string fargmentSrc = R"(
 			#version 330 core
 			layout(location=0) out vec4 color;
-			in vec3 v_Position;
+			in vec4 v_Color;
 			void main()
 			{
-				color=vec4(v_Position*0.5+0.5,1);
+				color=v_Color;
 			}
 		)";
 		m_Shader = std::make_unique<Shader>(vertexSrc, fargmentSrc);
