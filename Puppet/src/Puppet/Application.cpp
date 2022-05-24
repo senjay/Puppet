@@ -2,6 +2,7 @@
 #include "Application.h"
 #include <glad/glad.h>
 #include "Platform/OpenGL/OpenGLBuffer.h"
+#include "Platform/OpenGL/OpenGLVertexArray.h"
 namespace Puppet {
 
 	Application* Application::s_Instance = nullptr;
@@ -15,17 +16,15 @@ namespace Puppet {
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
+
 		uint32_t indices[3] = { 0,1,2 };
 		float vertices[3*7] = {
 			-0.5, -0.5, 0,	1, 0, 0, 1,
 			 0.5, -0.5, 0,	0, 1, 0, 1,
-			  0	,  0.5, 0,	0, 0, 1, 1,
+			   0,  0.5, 0,	0, 0, 1, 1,
 		};
 
 		m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
-		m_VertexBuffer->Bind();
-
-
 		{
 			BufferLayout layout = {
 			{ShaderDataType::Float3,"a_Position"},
@@ -34,25 +33,11 @@ namespace Puppet {
 			m_VertexBuffer->SetLayout(layout);
 		}
 
-		glGenVertexArrays(1, &m_VertexArray);
-		glBindVertexArray(m_VertexArray);
-		int index = 0;
-		const auto& layout = m_VertexBuffer->GetLayout();
-		for (const auto& element : layout)
-		{
-			glEnableVertexAttribArray(index);
-			glVertexAttribPointer(index,
-				element.GetComponentCount(),
-				ShaderDataTypeToOpenGLBaseType(element.Type),
-				element.Normalized ? GL_TRUE : GL_FALSE,
-				layout.GetStride(),
-				(const void*)element.Offset);
-			++index;
-		}
-
-		m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices)));
-		m_IndexBuffer->Bind();
-
+		m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+		
+		m_VertexArray.reset(VertexArray::Create());
+		m_VertexArray->AddVertexBuffer(m_VertexBuffer);
+		m_VertexArray->SetIndexBuffer(m_IndexBuffer);
 
 		std::string vertexSrc = R"(
 			#version 330 core
@@ -119,7 +104,7 @@ namespace Puppet {
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			m_Shader->Bind();
-			glBindVertexArray(m_VertexArray);
+			m_VertexArray->Bind();
 			glDrawElements(GL_TRIANGLES, m_IndexBuffer->GetCount(), GL_UNSIGNED_INT, nullptr);
 			
 			for (Layer* layer : m_LayerStack)
