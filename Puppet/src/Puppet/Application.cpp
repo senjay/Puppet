@@ -5,12 +5,6 @@
 namespace Puppet {
 
 	Application* Application::s_Instance = nullptr;
-	int indices[3] = { 0,1,2 };
-	float vertices[9] = {
-	-0.5, -0.5, 0,
-	0.5, -0.5, 0,
-	0, 0.5, 0
-	};
 	Application::Application()
 	{
 		PP_CORE_ASSERT(!s_Instance, "Application Instance is exits");
@@ -21,21 +15,50 @@ namespace Puppet {
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
+		uint32_t indices[3] = { 0,1,2 };
+		float vertices[9] = {
+		-0.5, -0.5, 0,
+		0.5, -0.5, 0,
+		0, 0.5, 0
+		};
 
-
-		glGenBuffers(1, &m_VertexBuffer);
-		glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
+		m_VertexBuffer->Bind();
+		//glGenBuffers(1, &m_VertexBuffer);
+		//glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
+		//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 		glGenVertexArrays(1, &m_VertexArray);
 		glBindVertexArray(m_VertexArray);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
 
+		m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices)));
+		m_IndexBuffer->Bind();
+		//glGenBuffers(1, &m_IndexBuffer);
+		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
+		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-		glGenBuffers(1, &m_IndexBuffer);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+		std::string vertexSrc = R"(
+			#version 330 core
+			layout(location=0) in vec3 a_Position;
+			out vec3 v_Position;
+			void main()
+			{
+				gl_Position=vec4(a_Position,1.0);
+				v_Position=a_Position;
+			}
+		)";
+		std::string fargmentSrc = R"(
+			#version 330 core
+			layout(location=0) out vec4 color;
+			in vec3 v_Position;
+			void main()
+			{
+				color=vec4(v_Position*0.5+0.5,1);
+			}
+		)";
+		m_Shader = std::make_unique<Shader>(vertexSrc, fargmentSrc);
 
 	}
 	Application::~Application()
@@ -73,13 +96,16 @@ namespace Puppet {
 	{
 		
 		//äÖÈ¾²ã´ÓÇ°Íùºó
+		
 		while (m_Running)
 		{
 			glClearColor(0.1f, 0.1f, 0.1f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
 
+			m_Shader->Bind();
 			glBindVertexArray(m_VertexArray);
-			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+			glDrawElements(GL_TRIANGLES, m_IndexBuffer->GetCount(), GL_UNSIGNED_INT, nullptr);
+			
 			for (Layer* layer : m_LayerStack)
 			{
 				layer->OnUpdate();

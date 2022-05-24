@@ -8,6 +8,8 @@
 #include "Window.h"
 #include "InputSystem.h"
 #include "ImGui/ImGuiLayer.h"
+#include "Renderer/Shader.h"
+#include "Renderer/Buffer.h"
 namespace Puppet {
 	class PUPPET_API Application
 	{
@@ -28,7 +30,10 @@ namespace Puppet {
 			bool m_Running = true;
 			LayerStack m_LayerStack;
 
-			unsigned int m_VertexArray, m_VertexBuffer, m_IndexBuffer;
+			unsigned int m_VertexArray;
+			std::unique_ptr<Shader>m_Shader;
+			std::unique_ptr<VertexBuffer>m_VertexBuffer;
+			std::unique_ptr<IndexBuffer>m_IndexBuffer;
 	};
 	// To be defined in Client
 	Application* CreateApplication();
