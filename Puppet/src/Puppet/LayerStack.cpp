@@ -4,7 +4,7 @@ namespace Puppet {
 
 	LayerStack::LayerStack()
 	{
-		m_Layers.begin();
+		
 	}
 
 	LayerStack::~LayerStack()

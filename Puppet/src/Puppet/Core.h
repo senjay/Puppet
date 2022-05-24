@@ -1,11 +1,14 @@
 #pragma once
-
 #ifdef  PP_PLATFORM_WINDOWS
-#ifdef  PP_BUILD_DLL
-	#define PUPPET_API __declspec(dllexport)
-#else
-	#define PUPPET_API __declspec(dllimport)
-#endif //  PP_BUILD_DLL
+	#if PP_DYNAMIC_LINK
+		#ifdef  PP_BUILD_DLL
+			#define PUPPET_API __declspec(dllexport)
+		#else
+			#define PUPPET_API __declspec(dllimport)
+		#endif 
+	#else
+		#define PUPPET_API
+	#endif
 #else
 	#error Only Windows Now
 #endif //  PP_PLATFORM_WINDOWS

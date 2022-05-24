@@ -22,8 +22,10 @@ group ""
 
 project "Puppet"
 	location "Puppet"
-	kind "SharedLib"
-	language "c++"
+	language "C++"
+	cppdialect "C++17"
+	kind "StaticLib"
+	staticruntime "off"
 
 	targetdir("bin/".. outputdir .."/%{prj.name}")
 	objdir("bin-int/".. outputdir .."/%{prj.name}")
@@ -56,18 +58,11 @@ project "Puppet"
 	}
 
 	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "off"
 		systemversion "latest"
 		defines 
 		{
 			"PP_PLATFORM_WINDOWS",
-			"PP_BUILD_DLL",
-			"GLFW_INCLUDE_NONE"
-		}
-		postbuildcommands
-		{
-			{"{COPY} %{cfg.buildtarget.relpath} \"../bin/"..outputdir.."/Sandbox/\""}
+			"GLFW_INCLUDE_NONE",
 		}
 
 	filter "configurations:Debug"
@@ -76,22 +71,24 @@ project "Puppet"
 		{
 			"PP_DEBUG"
 		}
-		symbols "On"
+		symbols "on"
 
 	filter "configurations:Release"
 		runtime "Release"
 		defines "PP_Release"
-		optimize "On"
+		optimize "on"
 
 	filter "configurations:Dist"
 		runtime "Release"
 		defines "PP_Dist"
-		optimize "On"
+		optimize "on"
 
 project "Sandbox"
 	location "Sandbox"
+	language "C++"
+	cppdialect "C++17"
 	kind "ConsoleApp"
-	language "c++"
+	staticruntime "off"
 
 	targetdir("bin/".. outputdir .."/%{prj.name}")
 	objdir("bin-int/".. outputdir .."/%{prj.name}")
@@ -112,8 +109,6 @@ project "Sandbox"
 	}
 
 	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "off"
 		systemversion "latest"
 		defines 
 		{
@@ -123,14 +118,14 @@ project "Sandbox"
 	filter "configurations:Debug"
 		runtime "Debug"
 		defines "PP_DEBUG"
-		symbols "On"
+		symbols "on"
 
 	filter "configurations:Release"
 		runtime "Release"
 		defines "PP_Release"
-		optimize "On"
+		optimize "on"
 
 	filter "configurations:Dist"
 		runtime "Release"
 		defines "PP_Dist"
-		optimize "On"
+		optimize "on"
