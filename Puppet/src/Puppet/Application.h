@@ -27,6 +27,8 @@ namespace Puppet {
 			ImGuiLayer* m_ImGuiLayer;
 			bool m_Running = true;
 			LayerStack m_LayerStack;
+
+			unsigned int m_VertexArray, m_VertexBuffer, m_IndexBuffer;
 	};
 	// To be defined in Client
 	Application* CreateApplication();
