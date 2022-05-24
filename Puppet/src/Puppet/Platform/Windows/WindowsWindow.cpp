@@ -6,7 +6,7 @@
 #include "WindowsInput.h"
 #include "Puppet/InputSystem.h"
 #include <glad/glad.h>
-
+#include <GLFW/glfw3.h>
 namespace Puppet {
 
 	static bool s_GLFWInitialized = false;
@@ -36,7 +36,7 @@ namespace Puppet {
 	{
 
 		Puppet::InputSystem::getInstance().initialize(new WindowsInput());
-
+		
 		m_Data.Title = props.Title;
 		m_Data.Width = props.Width;
 		m_Data.Height = props.Height;
@@ -53,9 +53,8 @@ namespace Puppet {
 
 
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
-		glfwMakeContextCurrent(m_Window);
-		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-		PP_CORE_ASSERT(status, "Could not initialize Glad!");
+		m_Context = new OpenGLContext(m_Window);
+		m_Context->Init();
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVSync(true);
 
@@ -148,7 +147,7 @@ namespace Puppet {
 	void WindowsWindow::OnUpdate()
 	{
 		glfwPollEvents();
-		glfwSwapBuffers(m_Window);
+		m_Context->SwapBuffers();
 	}
 
 	void WindowsWindow::SetVSync(bool enable)

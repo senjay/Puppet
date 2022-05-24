@@ -2,7 +2,8 @@
 #pragma once
 
 #include "Puppet/Window.h"
-#include <GLFW/glfw3.h>
+#include "Puppet/Platform/OpenGL/OpenGLContext.h"
+class GLFWwindow;
 namespace Puppet {
 
 	// 游戏的窗口
@@ -25,6 +26,8 @@ namespace Puppet {
 		virtual void Init(const WindowProps& props);
 		virtual void Shutdown();
 	private:
+		GraphicsContext* m_Context;
+
 		// OpenGL 声明一个窗体
 		GLFWwindow* m_Window;
 
