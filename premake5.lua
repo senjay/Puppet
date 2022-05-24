@@ -102,6 +102,7 @@ project "Sandbox"
 		"Puppet/vendor/spdlog/include",
 		"Puppet/src",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.ImGui}",
 	}
 	links
 	{

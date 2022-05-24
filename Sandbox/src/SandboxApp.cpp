@@ -5,7 +5,7 @@
 #include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
 #include <glm/ext/matrix_clip_space.hpp> // glm::perspective
 #include <glm/ext/scalar_constants.hpp> // glm::pi
-
+#include <imgui.h>
 glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
 {
 	glm::mat4 Projection = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.f);
@@ -37,6 +37,12 @@ public:
 			Puppet::KeyPressedEvent& e = (Puppet::KeyPressedEvent&)event;
 			PP_TRACE("{0}", (char)e.GetKeyCode());
 		}
+	}
+	void OnUIRender()override
+	{
+		ImGui::Begin("Example Layer");
+		ImGui::Text("Puppet in Example Layer\n");
+		ImGui::End();
 	}
 
 };
