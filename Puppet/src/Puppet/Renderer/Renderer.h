@@ -1,22 +1,16 @@
 #pragma once
-
+#include "RendererAPI.h"
+#include "RenderCommand.h"
 namespace Puppet {
-
-	// 渲染类型
-	enum class RendererAPI
-	{
-		None = 0,
-		OpenGL = 1
-	};
-
-	// 渲染接口
 	class Renderer
 	{
 	public:
-		static RendererAPI GetAPI() { return s_RendererAPI; }
-		static void SetAPI(RendererAPI apiType) {s_RendererAPI = apiType;}
+		static void BeginScene();
+		static void EndSence();
+		static void Submit(const std::shared_ptr<VertexArray>& vertexArray);
+		static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 	private:
-		static RendererAPI s_RendererAPI;
+
 	};
 
 }
