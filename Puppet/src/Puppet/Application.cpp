@@ -16,6 +16,7 @@ namespace Puppet {
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
+		m_Camera = std::make_shared<OrthographicCamera>(-1.6, 1.6, -0.9, 0.9);
 
 		uint32_t indices[3] = { 0,1,2 };
 		float vertices[3*7] = {
@@ -43,10 +44,11 @@ namespace Puppet {
 			#version 330 core
 			layout(location=0) in vec3 a_Position;
 			layout(location=1) in vec4 a_Color;
+			uniform mat4 u_ViewProjection;
 			out vec4 v_Color;
 			void main()
 			{
-				gl_Position=vec4(a_Position,0.5);
+				gl_Position=u_ViewProjection*vec4(a_Position,1.0);
 				v_Color=a_Color;
 			}
 		)";
@@ -87,10 +89,11 @@ namespace Puppet {
 			#version 330 core
 			layout(location=0) in vec3 a_Position;
 			out vec4 v_Position;
+			uniform mat4 u_ViewProjection;
 			void main()
 			{
-				gl_Position=vec4(a_Position,1.0);
-				v_Position=gl_Position;
+				gl_Position=u_ViewProjection*vec4(a_Position,1.0);
+				v_Position=vec4(a_Position,1.0);
 			}
 		)";
 		std::string fargmentSrc2 = R"(
@@ -147,16 +150,15 @@ namespace Puppet {
 			RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 			RenderCommand::Clear();
 
-			Renderer::BeginScene();
-
-			m_Shader->Bind();
-			Renderer::Submit(m_VertexArray);
-
-			m_Shader2->Bind();
-			Renderer::Submit(m_QuadVertexArray);
+			m_Camera->SetRotation(-45);
+			//m_Camera->SetPosition({ 0.5,0.5,0.0 });
+			
+			Renderer::BeginScene(m_Camera);
+			
+			Renderer::Submit(m_Shader2, m_QuadVertexArray);
+			Renderer::Submit(m_Shader,m_VertexArray);
 
 			Renderer::EndSence();
-
 
 			for (Layer* layer : m_LayerStack)
 			{

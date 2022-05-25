@@ -12,6 +12,7 @@
 #include "Renderer/Buffer.h"
 #include "Renderer/VertexArray.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/OrthographicCamera.h"
 namespace Puppet {
 	class PUPPET_API Application
 	{
@@ -39,6 +40,7 @@ namespace Puppet {
 
 			std::shared_ptr<Shader>m_Shader2;
 			std::shared_ptr<VertexArray>m_QuadVertexArray;
+			std::shared_ptr<OrthographicCamera>m_Camera;
 	private:
 		static Application* s_Instance;
 	};
