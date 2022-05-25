@@ -38,7 +38,7 @@ namespace Puppet {
 		m_VertexArray.reset(VertexArray::Create());
 		m_VertexArray->AddVertexBuffer(m_VertexBuffer);
 		m_VertexArray->SetIndexBuffer(m_IndexBuffer);
-
+	
 		std::string vertexSrc = R"(
 			#version 330 core
 			layout(location=0) in vec3 a_Position;
@@ -46,7 +46,7 @@ namespace Puppet {
 			out vec4 v_Color;
 			void main()
 			{
-				gl_Position=vec4(a_Position,1.0);
+				gl_Position=vec4(a_Position,0.5);
 				v_Color=a_Color;
 			}
 		)";
@@ -61,6 +61,48 @@ namespace Puppet {
 		)";
 		m_Shader = std::make_unique<Shader>(vertexSrc, fargmentSrc);
 
+
+		//------------second VBO Test------------//
+		float vertices2[4 * 3] = {
+			-0.5, -0.5, 0,
+			 0.5, -0.5, 0,
+			 0.5,  0.5, 0,
+			-0.5,  0.5, 0,
+		};
+		uint32_t indices2[6] = { 0,1,2,2,3,0 };
+		std::shared_ptr<VertexBuffer>QuadVBuffer;
+		QuadVBuffer.reset(VertexBuffer::Create(vertices2, sizeof(vertices2)));
+		{
+			BufferLayout layout = {
+			{ShaderDataType::Float3,"a_Position"}
+			};
+			QuadVBuffer->SetLayout(layout);
+		}
+		std::shared_ptr<IndexBuffer>QuadIndexBuff;
+		QuadIndexBuff.reset(IndexBuffer::Create(indices2, sizeof(indices2) / sizeof(uint32_t)));
+		m_QuadVertexArray.reset(VertexArray::Create());
+		m_QuadVertexArray->AddVertexBuffer(QuadVBuffer);
+		m_QuadVertexArray->SetIndexBuffer(QuadIndexBuff);
+		std::string vertexSrc2 = R"(
+			#version 330 core
+			layout(location=0) in vec3 a_Position;
+			out vec4 v_Position;
+			void main()
+			{
+				gl_Position=vec4(a_Position,1.0);
+				v_Position=gl_Position;
+			}
+		)";
+		std::string fargmentSrc2 = R"(
+			#version 330 core
+			layout(location=0) out vec4 color;
+			in vec4 v_Position;
+			void main()
+			{
+				color=vec4((v_Position+0.5).xyz,1);
+			}
+		)";
+		m_Shader2 = std::make_unique<Shader>(vertexSrc2, fargmentSrc2);
 	}
 	Application::~Application()
 	{
@@ -102,11 +144,15 @@ namespace Puppet {
 		{
 			glClearColor(0.1f, 0.1f, 0.1f, 1);
 			glClear(GL_COLOR_BUFFER_BIT);
-
+				
 			m_Shader->Bind();
 			m_VertexArray->Bind();
-			glDrawElements(GL_TRIANGLES, m_IndexBuffer->GetCount(), GL_UNSIGNED_INT, nullptr);
-			
+			glDrawElements(GL_TRIANGLES, m_VertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+
+			m_Shader2->Bind();
+			m_QuadVertexArray->Bind();
+			glDrawElements(GL_TRIANGLES, m_QuadVertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+
 			for (Layer* layer : m_LayerStack)
 			{
 				layer->OnUpdate();
