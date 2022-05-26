@@ -15,23 +15,137 @@ glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
 	glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 	return Projection * View * Model;
 }
-
+using namespace Puppet;
 class ExampleLayer : public Puppet::Layer
 {
 public:
+	
 	ExampleLayer() : Layer("Example")
 	{
-		auto cam = camera(0.5f, { 0.3f, 0.4f });
+		m_Camera = std::make_shared<OrthographicCamera>(-1.6, 1.6, -0.9, 0.9);
+
+		uint32_t indices[3] = { 0,1,2 };
+		float vertices[3 * 7] = {
+			-0.5, -0.5, 0,	1, 0, 0, 1,
+			 0.5, -0.5, 0,	0, 1, 0, 1,
+			   0,  0.5, 0,	0, 0, 1, 1,
+		};
+
+		m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
+		{
+			BufferLayout layout = {
+			{ShaderDataType::Float3,"a_Position"},
+			{ShaderDataType::Float4,"a_Color"},
+			};
+			m_VertexBuffer->SetLayout(layout);
+		}
+
+		m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+
+		m_VertexArray.reset(VertexArray::Create());
+		m_VertexArray->AddVertexBuffer(m_VertexBuffer);
+		m_VertexArray->SetIndexBuffer(m_IndexBuffer);
+
+		std::string vertexSrc = R"(
+			#version 330 core
+			layout(location=0) in vec3 a_Position;
+			layout(location=1) in vec4 a_Color;
+			uniform mat4 u_ViewProjection;
+			out vec4 v_Color;
+			void main()
+			{
+				gl_Position=u_ViewProjection*vec4(a_Position,1.0);
+				v_Color=a_Color;
+			}
+		)";
+		std::string fargmentSrc = R"(
+			#version 330 core
+			layout(location=0) out vec4 color;
+			in vec4 v_Color;
+			void main()
+			{
+				color=v_Color;
+			}
+		)";
+		m_Shader = std::make_unique<Shader>(vertexSrc, fargmentSrc);
+
+
+		//------------second VBO Test------------//
+		float vertices2[4 * 3] = {
+			-0.5, -0.5, 0,
+			 0.5, -0.5, 0,
+			 0.5,  0.5, 0,
+			-0.5,  0.5, 0,
+		};
+		uint32_t indices2[6] = { 0,1,2,2,3,0 };
+		std::shared_ptr<VertexBuffer>QuadVBuffer;
+		QuadVBuffer.reset(VertexBuffer::Create(vertices2, sizeof(vertices2)));
+		{
+			BufferLayout layout = {
+			{ShaderDataType::Float3,"a_Position"}
+			};
+			QuadVBuffer->SetLayout(layout);
+		}
+		std::shared_ptr<IndexBuffer>QuadIndexBuff;
+		QuadIndexBuff.reset(IndexBuffer::Create(indices2, sizeof(indices2) / sizeof(uint32_t)));
+		m_QuadVertexArray.reset(VertexArray::Create());
+		m_QuadVertexArray->AddVertexBuffer(QuadVBuffer);
+		m_QuadVertexArray->SetIndexBuffer(QuadIndexBuff);
+		std::string vertexSrc2 = R"(
+			#version 330 core
+			layout(location=0) in vec3 a_Position;
+			out vec4 v_Position;
+			uniform mat4 u_ViewProjection;
+			void main()
+			{
+				gl_Position=u_ViewProjection*vec4(a_Position,1.0);
+				v_Position=vec4(a_Position,1.0);
+			}
+		)";
+		std::string fargmentSrc2 = R"(
+			#version 330 core
+			layout(location=0) out vec4 color;
+			in vec4 v_Position;
+			void main()
+			{
+				color=vec4((v_Position+0.5).xyz,1);
+			}
+		)";
+		m_Shader2 = std::make_unique<Shader>(vertexSrc2, fargmentSrc2);
 	}
 
 	void OnUpdate() override
 	{
-		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::Tab))
-			PP_INFO("TAB pressed!");
+		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::W))
+			m_CameraPosition.y += m_CameraMoveSpeed;
+		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::S))
+			m_CameraPosition.y -= m_CameraMoveSpeed;
+		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::A))
+			m_CameraPosition.x -= m_CameraMoveSpeed;
+		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::D))
+			m_CameraPosition.x += m_CameraMoveSpeed;
+		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::D))
+			m_CameraPosition.x += m_CameraMoveSpeed;
+
+		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
+		RenderCommand::Clear();
+		m_CameraRotation += m_CameraRotationSpeed;
+		m_Camera->SetRotation(m_CameraRotation);
+		m_Camera->SetPosition(m_CameraPosition);
+
+		Renderer::BeginScene(m_Camera);
+
+		Renderer::Submit(m_Shader2, m_QuadVertexArray);
+		Renderer::Submit(m_Shader, m_VertexArray);
+
+		Renderer::EndSence();
 	}
 
 	void OnEvent(Puppet::Event& event) override
 	{
+		
+		EventDispatcher dispatcher(event);
+		dispatcher.Dispatch<KeyPressedEvent>(PP_BIND_EVENT_FN(ExampleLayer::OnKeyPressedEvent));
 		if (event.GetEventType() == Puppet::EventType::KeyPressed)
 		{
 			Puppet::KeyPressedEvent& e = (Puppet::KeyPressedEvent&)event;
@@ -44,7 +158,39 @@ public:
 		ImGui::Text("Puppet in Example Layer\n");
 		ImGui::End();
 	}
+	bool OnKeyPressedEvent(KeyPressedEvent&event)
+	{
+		return false;
+		switch (event.GetKeyCode())
+		{
+		case Puppet::Key::W :
+			m_CameraPosition.y += m_CameraMoveSpeed;
+			break;
+		case Puppet::Key::S:
+			m_CameraPosition.y -= m_CameraMoveSpeed;
+			break;
+		case Puppet::Key::A:
+			m_CameraPosition.x -= m_CameraMoveSpeed;
+			break;
+		case Puppet::Key::D:
+			m_CameraPosition.x += m_CameraMoveSpeed;
+			break;
+		}
+		return false;
+	}
+private:
+	std::shared_ptr<Shader>m_Shader;
+	std::shared_ptr<VertexBuffer>m_VertexBuffer;
+	std::shared_ptr<IndexBuffer>m_IndexBuffer;
+	std::shared_ptr<VertexArray>m_VertexArray;
 
+	std::shared_ptr<Shader>m_Shader2;
+	std::shared_ptr<VertexArray>m_QuadVertexArray;
+	std::shared_ptr<OrthographicCamera>m_Camera;
+	glm::vec3 m_CameraPosition = { 0.0f,0.0f,0.0f };
+	float m_CameraRotation = 0.0f;
+	float m_CameraMoveSpeed=0.05f;
+	float m_CameraRotationSpeed = 1.0f;
 };
 
 class Sandbox :public Puppet::Application

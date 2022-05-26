@@ -8,6 +8,9 @@
 #include "Puppet/MouseCodes.h"
 #include "Puppet/InputSystem.h"
 
+#include "Puppet/Renderer/Renderer.h"
+#include "Puppet/Renderer/RenderCommand.h"
+
 #include "Puppet/Log.h"
 // -----Entry  Point------
 #include "Puppet/EntryPoint.h"

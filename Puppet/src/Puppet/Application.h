@@ -6,15 +6,9 @@
 #include "Events/MouseEvent.h"
 #include "LayerStack.h"
 #include "Window.h"
-#include "InputSystem.h"
 #include "ImGui/ImGuiLayer.h"
-#include "Renderer/Shader.h"
-#include "Renderer/Buffer.h"
-#include "Renderer/VertexArray.h"
-#include "Renderer/Renderer.h"
-#include "Renderer/OrthographicCamera.h"
 namespace Puppet {
-	class PUPPET_API Application
+	class  Application
 	{
 	public:
 			Application();
@@ -32,15 +26,6 @@ namespace Puppet {
 			ImGuiLayer* m_ImGuiLayer;
 			bool m_Running = true;
 			LayerStack m_LayerStack;
-
-			std::shared_ptr<Shader>m_Shader;
-			std::shared_ptr<VertexBuffer>m_VertexBuffer;
-			std::shared_ptr<IndexBuffer>m_IndexBuffer;
-			std::shared_ptr<VertexArray>m_VertexArray;
-
-			std::shared_ptr<Shader>m_Shader2;
-			std::shared_ptr<VertexArray>m_QuadVertexArray;
-			std::shared_ptr<OrthographicCamera>m_Camera;
 	private:
 		static Application* s_Instance;
 	};
