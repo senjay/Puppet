@@ -12,7 +12,7 @@ namespace Puppet {
 		s_Instance = this;
 		m_Window = std::unique_ptr<Window>(Window::Create());
 		m_Window->SetEventCallback(PP_BIND_EVENT_FN(Application::OnEvent));
-
+		m_Window->SetVSync(false);
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
@@ -52,13 +52,13 @@ namespace Puppet {
 	}
 	void Application::Run()
 	{
-		
+		Timer timer;
 		//äÖÈ¾²ã´ÓÇ°Íùºó
 		while (m_Running)
 		{
-
+			TimeStep timeStep = timer.Reset();
 			for (Layer* layer : m_LayerStack)
-				layer->OnUpdate();
+				layer->OnUpdate(timeStep);
 
 			m_ImGuiLayer->Begin();
 			for (Layer* layer : m_LayerStack)

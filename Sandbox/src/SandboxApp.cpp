@@ -114,22 +114,24 @@ public:
 		m_Shader2 = std::make_unique<Shader>(vertexSrc2, fargmentSrc2);
 	}
 
-	void OnUpdate() override
+	void OnUpdate(TimeStep ts) override
 	{
+		PP_TRACE("Delta time: {0}s ,{1}ms", ts.GetSeconds(), ts.GetMillseconds());
+		float tsSec = ts.GetSeconds();
 		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::W))
-			m_CameraPosition.y += m_CameraMoveSpeed;
+			m_CameraPosition.y += m_CameraMoveSpeed * tsSec;
 		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::S))
-			m_CameraPosition.y -= m_CameraMoveSpeed;
+			m_CameraPosition.y -= m_CameraMoveSpeed * tsSec;
 		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::A))
-			m_CameraPosition.x -= m_CameraMoveSpeed;
+			m_CameraPosition.x -= m_CameraMoveSpeed * tsSec;
 		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::D))
-			m_CameraPosition.x += m_CameraMoveSpeed;
+			m_CameraPosition.x += m_CameraMoveSpeed * tsSec;
 		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::D))
-			m_CameraPosition.x += m_CameraMoveSpeed;
+			m_CameraPosition.x += m_CameraMoveSpeed * tsSec;
 
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::Clear();
-		m_CameraRotation += m_CameraRotationSpeed;
+		m_CameraRotation += m_CameraRotationSpeed * tsSec;
 		m_Camera->SetRotation(m_CameraRotation);
 		m_Camera->SetPosition(m_CameraPosition);
 
@@ -189,8 +191,8 @@ private:
 	std::shared_ptr<OrthographicCamera>m_Camera;
 	glm::vec3 m_CameraPosition = { 0.0f,0.0f,0.0f };
 	float m_CameraRotation = 0.0f;
-	float m_CameraMoveSpeed=0.05f;
-	float m_CameraRotationSpeed = 1.0f;
+	float m_CameraMoveSpeed=2.0f;
+	float m_CameraRotationSpeed = 10.0f;
 };
 
 class Sandbox :public Puppet::Application

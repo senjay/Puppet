@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "Puppet/Core/TimeStep.h"
 #include "Puppet/Application.h"
 #include "Puppet/Layer.h"
 #include "Puppet/ImGui/ImGuiLayer.h"

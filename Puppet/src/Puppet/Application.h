@@ -7,6 +7,8 @@
 #include "LayerStack.h"
 #include "Window.h"
 #include "ImGui/ImGuiLayer.h"
+#include "Puppet/Core/TimeStep.h"
+#include "Puppet/Core/Timer.h"
 namespace Puppet {
 	class  Application
 	{
@@ -21,11 +23,14 @@ namespace Puppet {
 			void PushOverlay(Layer* layer);
 	private:
 			bool OnWindowClose(WindowCloseEvent& e);
-	
+
 			std::unique_ptr<Window> m_Window;
 			ImGuiLayer* m_ImGuiLayer;
 			bool m_Running = true;
 			LayerStack m_LayerStack;
+
+			TimeStep m_TimeStep;
+			float m_LastTime=0.0;
 	private:
 		static Application* s_Instance;
 	};
