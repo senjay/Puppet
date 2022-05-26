@@ -51,10 +51,11 @@ public:
 			layout(location=0) in vec3 a_Position;
 			layout(location=1) in vec4 a_Color;
 			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
 			out vec4 v_Color;
 			void main()
 			{
-				gl_Position=u_ViewProjection*vec4(a_Position,1.0);
+				gl_Position=u_ViewProjection*u_Transform*vec4(a_Position,1.0);
 				v_Color=a_Color;
 			}
 		)";
@@ -96,9 +97,10 @@ public:
 			layout(location=0) in vec3 a_Position;
 			out vec4 v_Position;
 			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
 			void main()
 			{
-				gl_Position=u_ViewProjection*vec4(a_Position,1.0);
+				gl_Position=u_ViewProjection*u_Transform*vec4(a_Position,1.0);
 				v_Position=vec4(a_Position,1.0);
 			}
 		)";
@@ -108,7 +110,7 @@ public:
 			in vec4 v_Position;
 			void main()
 			{
-				color=vec4((v_Position+0.5).xyz,1);
+				color=vec4(0.2,0.1,0.6,1);
 			}
 		)";
 		m_Shader2 = std::make_unique<Shader>(vertexSrc2, fargmentSrc2);
@@ -126,20 +128,29 @@ public:
 			m_CameraPosition.x -= m_CameraMoveSpeed * tsSec;
 		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::D))
 			m_CameraPosition.x += m_CameraMoveSpeed * tsSec;
-		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::D))
-			m_CameraPosition.x += m_CameraMoveSpeed * tsSec;
-
+		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::E))
+			m_CameraRotation += m_CameraRotationSpeed * tsSec;
+		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::Q))
+			m_CameraRotation -= m_CameraRotationSpeed * tsSec;
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::Clear();
-		m_CameraRotation += m_CameraRotationSpeed * tsSec;
 		m_Camera->SetRotation(m_CameraRotation);
 		m_Camera->SetPosition(m_CameraPosition);
 
 		Renderer::BeginScene(m_Camera);
-
-		Renderer::Submit(m_Shader2, m_QuadVertexArray);
+		
+		static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+		for (int i = 0; i < 20; ++i)
+		{
+			for (int j = 0; j < 20; ++j)
+			{
+				glm::vec3 pos = { i * 0.11f,j * 0.11f,0.0f };
+				glm::mat4 Modeltransform = glm::translate(glm::mat4(1.0f), pos);
+				Modeltransform *= scale;//scale
+				Renderer::Submit(m_Shader2, m_QuadVertexArray, Modeltransform);
+			}
+		}
 		Renderer::Submit(m_Shader, m_VertexArray);
-
 		Renderer::EndSence();
 	}
 
@@ -165,17 +176,17 @@ public:
 		return false;
 		switch (event.GetKeyCode())
 		{
-		case Puppet::Key::W :
-			m_CameraPosition.y += m_CameraMoveSpeed;
+		case Puppet::Key::Up :
+
 			break;
-		case Puppet::Key::S:
-			m_CameraPosition.y -= m_CameraMoveSpeed;
+		case Puppet::Key::Down:
+
 			break;
-		case Puppet::Key::A:
-			m_CameraPosition.x -= m_CameraMoveSpeed;
+		case Puppet::Key::Left:
+
 			break;
-		case Puppet::Key::D:
-			m_CameraPosition.x += m_CameraMoveSpeed;
+		case Puppet::Key::Right:
+
 			break;
 		}
 		return false;
