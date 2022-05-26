@@ -77,7 +77,7 @@ public:
 			-0.5,  0.5, 0,
 		};
 		uint32_t indices2[6] = { 0,1,2,2,3,0 };
-		std::shared_ptr<VertexBuffer>QuadVBuffer;
+		Ref<VertexBuffer>QuadVBuffer;
 		QuadVBuffer.reset(VertexBuffer::Create(vertices2, sizeof(vertices2)));
 		{
 			BufferLayout layout = {
@@ -85,7 +85,7 @@ public:
 			};
 			QuadVBuffer->SetLayout(layout);
 		}
-		std::shared_ptr<IndexBuffer>QuadIndexBuff;
+		Ref<IndexBuffer>QuadIndexBuff;
 		QuadIndexBuff.reset(IndexBuffer::Create(indices2, sizeof(indices2) / sizeof(uint32_t)));
 		m_QuadVertexArray.reset(VertexArray::Create());
 		m_QuadVertexArray->AddVertexBuffer(QuadVBuffer);
@@ -119,6 +119,7 @@ public:
 	{
 		PP_TRACE("Delta time: {0}s ,{1}ms", ts.GetSeconds(), ts.GetMillseconds());
 		float tsSec = ts.GetSeconds();
+		m_FPS =static_cast<int>(1.0 / tsSec);
 		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::W))
 			m_CameraPosition.y += m_CameraMoveSpeed * tsSec;
 		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::S))
@@ -170,6 +171,7 @@ public:
 	{
 		ImGui::Begin("Example Layer");
 		ImGui::Text("Puppet in Example Layer\n");
+		ImGui::Text("FPS: %d\n", m_FPS);
 		ImGui::ColorEdit4("Quad Color", glm::value_ptr(m_QuadColor));
 		ImGui::End();
 	}
@@ -207,6 +209,8 @@ private:
 	float m_CameraMoveSpeed=2.0f;
 	float m_CameraRotationSpeed = 10.0f;
 	glm::vec4 m_QuadColor = { 0.0f,0.0f,0.0f,1.0f};
+
+	int m_FPS=0;
 };
 
 class Sandbox :public Puppet::Application

@@ -12,7 +12,7 @@ namespace Puppet
 		void initialize(Input* input) 
 		{
 			PP_CORE_ASSERT(input, "Input System failed to Initialized!");
-			m_input = std::shared_ptr<Input>(input);
+			m_input = Ref<Input>(input);
 		}
 		bool IsKeyPressed(int keyCode) { return m_input->IsKeyPressedImpl(keyCode); }
 		bool IsMouseButtonPressed(int button) { return m_input->IsMouseButtonPressedImpl(button); }
@@ -20,6 +20,6 @@ namespace Puppet
 		float GetMouseX() { return m_input->GetMouseXImpl(); }
 		float GetMouseY() { return m_input->GetMouseYImpl(); }
 	private:
-		std::shared_ptr<Input>m_input;
+		Ref<Input>m_input;
 	};
 }
