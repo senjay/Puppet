@@ -1,10 +1,9 @@
 #include <Puppet.h>
-#include <glm/vec3.hpp> // glm::vec3
-#include <glm/vec4.hpp> // glm::vec4
-#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
 #include <glm/ext/matrix_clip_space.hpp> // glm::perspective
 #include <glm/ext/scalar_constants.hpp> // glm::pi
+#include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
 {
@@ -68,8 +67,7 @@ public:
 				color=v_Color;
 			}
 		)";
-		m_Shader = std::make_unique<Shader>(vertexSrc, fargmentSrc);
-
+		m_Shader=Shader::Create(vertexSrc, fargmentSrc);
 
 		//------------second VBO Test------------//
 		float vertices2[4 * 3] = {
@@ -108,12 +106,13 @@ public:
 			#version 330 core
 			layout(location=0) out vec4 color;
 			in vec4 v_Position;
+			uniform vec4 u_Color;
 			void main()
 			{
-				color=vec4(0.2,0.1,0.6,1);
+				color=u_Color;
 			}
 		)";
-		m_Shader2 = std::make_unique<Shader>(vertexSrc2, fargmentSrc2);
+		m_Shader2=Shader::Create(vertexSrc2, fargmentSrc2);
 	}
 
 	void OnUpdate(TimeStep ts) override
@@ -140,6 +139,8 @@ public:
 		Renderer::BeginScene(m_Camera);
 		
 		static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+		m_Shader2->Bind();
+		m_Shader2->SetFloat4("u_Color", m_QuadColor);
 		for (int i = 0; i < 20; ++i)
 		{
 			for (int j = 0; j < 20; ++j)
@@ -169,6 +170,7 @@ public:
 	{
 		ImGui::Begin("Example Layer");
 		ImGui::Text("Puppet in Example Layer\n");
+		ImGui::ColorEdit4("Quad Color", glm::value_ptr(m_QuadColor));
 		ImGui::End();
 	}
 	bool OnKeyPressedEvent(KeyPressedEvent&event)
@@ -192,18 +194,19 @@ public:
 		return false;
 	}
 private:
-	std::shared_ptr<Shader>m_Shader;
-	std::shared_ptr<VertexBuffer>m_VertexBuffer;
-	std::shared_ptr<IndexBuffer>m_IndexBuffer;
-	std::shared_ptr<VertexArray>m_VertexArray;
+	Ref<Shader>m_Shader;
+	Ref<VertexBuffer>m_VertexBuffer;
+	Ref<IndexBuffer>m_IndexBuffer;
+	Ref<VertexArray>m_VertexArray;
 
-	std::shared_ptr<Shader>m_Shader2;
-	std::shared_ptr<VertexArray>m_QuadVertexArray;
-	std::shared_ptr<OrthographicCamera>m_Camera;
+	Ref<Shader>m_Shader2;
+	Ref<VertexArray>m_QuadVertexArray;
+	Ref<OrthographicCamera>m_Camera;
 	glm::vec3 m_CameraPosition = { 0.0f,0.0f,0.0f };
 	float m_CameraRotation = 0.0f;
 	float m_CameraMoveSpeed=2.0f;
 	float m_CameraRotationSpeed = 10.0f;
+	glm::vec4 m_QuadColor = { 0.0f,0.0f,0.0f,1.0f};
 };
 
 class Sandbox :public Puppet::Application
