@@ -11,6 +11,10 @@
 
 #include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Renderer/RenderCommand.h"
+#include "Puppet/Renderer/Buffer.h"
+#include "Puppet/Renderer/Shader.h"
+#include "Puppet/Renderer/Texture.h"
+#include "Puppet/Renderer/VertexArray.h"
 
 #include "Puppet/Log.h"
 // -----Entry  Point------

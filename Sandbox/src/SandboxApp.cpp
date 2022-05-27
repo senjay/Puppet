@@ -70,18 +70,19 @@ public:
 		m_Shader=Shader::Create(vertexSrc, fargmentSrc);
 
 		//------------second VBO Test------------//
-		float vertices2[4 * 3] = {
-			-0.5, -0.5, 0,
-			 0.5, -0.5, 0,
-			 0.5,  0.5, 0,
-			-0.5,  0.5, 0,
+		float vertices2[4 * 5] = {
+			-0.5, -0.5, 0,	0,0,
+			 0.5, -0.5, 0,	1,0,
+			 0.5,  0.5, 0,	1,1,
+			-0.5,  0.5, 0,	0,1
 		};
 		uint32_t indices2[6] = { 0,1,2,2,3,0 };
 		Ref<VertexBuffer>QuadVBuffer;
 		QuadVBuffer.reset(VertexBuffer::Create(vertices2, sizeof(vertices2)));
 		{
 			BufferLayout layout = {
-			{ShaderDataType::Float3,"a_Position"}
+			{ShaderDataType::Float3,"a_Position"},
+			{ShaderDataType::Float2,"a_TexCoord"}
 			};
 			QuadVBuffer->SetLayout(layout);
 		}
@@ -113,6 +114,35 @@ public:
 			}
 		)";
 		m_Shader2=Shader::Create(vertexSrc2, fargmentSrc2);
+
+		std::string TexturevertexSrc = R"(
+			#version 330 core
+			layout(location=0) in vec3 a_Position;
+			layout(location=1) in vec2 a_TexCoord;
+	
+			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
+			out vec2 v_TexCoord;
+			void main()
+			{
+				gl_Position=u_ViewProjection*u_Transform*vec4(a_Position,1.0);
+				v_TexCoord=a_TexCoord;
+			}
+		)";
+		std::string TexturefargmentSrc = R"(
+			#version 330 core
+			layout(location=0) out vec4 color;
+			in vec2 v_TexCoord;
+			uniform sampler2D u_Texture;
+			void main()
+			{
+				color=texture(u_Texture,vec2(v_TexCoord.x,1-v_TexCoord.y));
+			}
+		)";
+		m_TexShader = Shader::Create(TexturevertexSrc, TexturefargmentSrc);
+		m_Texture = Texture2D::Create("assets/textures/Checkerboard.png");
+		m_TexShader->Bind();
+		m_TexShader->SetInt("u_Texture", 0);
 	}
 
 	void OnUpdate(TimeStep ts) override
@@ -152,7 +182,10 @@ public:
 				Renderer::Submit(m_Shader2, m_QuadVertexArray, Modeltransform);
 			}
 		}
-		Renderer::Submit(m_Shader, m_VertexArray);
+		
+		m_Texture->Bind();
+		Renderer::Submit(m_TexShader, m_QuadVertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		//Renderer::Submit(m_Shader, m_VertexArray);
 		Renderer::EndSence();
 	}
 
@@ -201,9 +234,10 @@ private:
 	Ref<IndexBuffer>m_IndexBuffer;
 	Ref<VertexArray>m_VertexArray;
 
-	Ref<Shader>m_Shader2;
+	Ref<Shader>m_Shader2,m_TexShader;
 	Ref<VertexArray>m_QuadVertexArray;
 	Ref<OrthographicCamera>m_Camera;
+	Ref<Texture2D>m_Texture;
 	glm::vec3 m_CameraPosition = { 0.0f,0.0f,0.0f };
 	float m_CameraRotation = 0.0f;
 	float m_CameraMoveSpeed=2.0f;
