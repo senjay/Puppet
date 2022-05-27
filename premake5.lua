@@ -13,6 +13,7 @@ IncludeDir["GLFW"] = "Puppet/vendor/GLFW/include"
 IncludeDir["Glad"] = "Puppet/vendor/Glad/include"
 IncludeDir["ImGui"] = "Puppet/vendor/imgui"
 IncludeDir["glm"] = "Puppet/vendor/glm"
+IncludeDir["stb_image"] = "Puppet/vendor/stb_image"
 
 group "Dependencies"
 	include "Puppet/vendor/GLFW"
@@ -39,6 +40,8 @@ project "Puppet"
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl",
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp",
 	}
 	includedirs
 	{
@@ -48,6 +51,7 @@ project "Puppet"
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.stb_image}",
 	}
 	links
 	{
