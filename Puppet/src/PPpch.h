@@ -12,7 +12,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
-
+#include <fstream>
 #include "Puppet/Log.h"
 
 #ifdef PP_PLATFORM_WINDOWS

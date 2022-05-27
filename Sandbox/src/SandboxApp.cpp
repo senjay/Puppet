@@ -115,31 +115,7 @@ public:
 		)";
 		m_Shader2=Shader::Create(vertexSrc2, fargmentSrc2);
 
-		std::string TexturevertexSrc = R"(
-			#version 330 core
-			layout(location=0) in vec3 a_Position;
-			layout(location=1) in vec2 a_TexCoord;
-	
-			uniform mat4 u_ViewProjection;
-			uniform mat4 u_Transform;
-			out vec2 v_TexCoord;
-			void main()
-			{
-				gl_Position=u_ViewProjection*u_Transform*vec4(a_Position,1.0);
-				v_TexCoord=a_TexCoord;
-			}
-		)";
-		std::string TexturefargmentSrc = R"(
-			#version 330 core
-			layout(location=0) out vec4 color;
-			in vec2 v_TexCoord;
-			uniform sampler2D u_Texture;
-			void main()
-			{
-				color=texture(u_Texture,vec2(v_TexCoord.x,1-v_TexCoord.y));
-			}
-		)";
-		m_TexShader = Shader::Create(TexturevertexSrc, TexturefargmentSrc);
+		m_TexShader = Shader::Create("./assets/shaders/Texture.glsl");
 		m_LogoTexture = Texture2D::Create("./assets/textures/Logo.png");
 		m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
 		m_TexShader->Bind();
