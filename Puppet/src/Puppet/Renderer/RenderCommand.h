@@ -17,6 +17,10 @@ namespace Puppet {
 		{
 			s_RendererAPI->DrawIndexed(vertexArray);
 		}
+		static void Init()
+		{
+			s_RendererAPI->Init();
+		}
 	private:
 		static RendererAPI* s_RendererAPI;
 	};

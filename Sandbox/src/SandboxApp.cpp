@@ -140,7 +140,8 @@ public:
 			}
 		)";
 		m_TexShader = Shader::Create(TexturevertexSrc, TexturefargmentSrc);
-		m_Texture = Texture2D::Create("assets/textures/Checkerboard.png");
+		m_LogoTexture = Texture2D::Create("./assets/textures/Logo.png");
+		m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
 		m_TexShader->Bind();
 		m_TexShader->SetInt("u_Texture", 0);
 	}
@@ -185,6 +186,9 @@ public:
 		
 		m_Texture->Bind();
 		Renderer::Submit(m_TexShader, m_QuadVertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		m_LogoTexture->Bind();
+		Renderer::Submit(m_TexShader, m_QuadVertexArray, 
+			glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 		//Renderer::Submit(m_Shader, m_VertexArray);
 		Renderer::EndSence();
 	}
@@ -237,7 +241,7 @@ private:
 	Ref<Shader>m_Shader2,m_TexShader;
 	Ref<VertexArray>m_QuadVertexArray;
 	Ref<OrthographicCamera>m_Camera;
-	Ref<Texture2D>m_Texture;
+	Ref<Texture2D>m_Texture,m_LogoTexture;
 	glm::vec3 m_CameraPosition = { 0.0f,0.0f,0.0f };
 	float m_CameraRotation = 0.0f;
 	float m_CameraMoveSpeed=2.0f;

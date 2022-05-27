@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include "Platform/OpenGL/OpenGLBuffer.h"
 #include "Platform/OpenGL/OpenGLVertexArray.h"
+#include "Renderer/Renderer.h"
 namespace Puppet {
 
 	Application* Application::s_Instance = nullptr;
@@ -13,6 +14,9 @@ namespace Puppet {
 		m_Window = Scope<Window>(Window::Create());
 		m_Window->SetEventCallback(PP_BIND_EVENT_FN(Application::OnEvent));
 		m_Window->SetVSync(false);
+		
+		Renderer::Init();
+
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
