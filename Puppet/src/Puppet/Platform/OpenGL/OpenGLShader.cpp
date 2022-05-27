@@ -194,7 +194,7 @@ namespace Puppet
 	void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources)
 	{
 		GLuint program = glCreateProgram();
-		std::vector<GLenum> glShaderIDs;
+		std::vector<GLuint> glShaderIDs;
 		glShaderIDs.reserve(shaderSources.size());
 		for (auto&& [type, source] : shaderSources)
 		{
