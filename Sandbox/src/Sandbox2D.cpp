@@ -4,6 +4,7 @@ Sandbox2D::Sandbox2D() : Layer("Sandbox2D")
 {
 	m_CameraController = CreateRef<OrthographicCameraController>(1280.0f / 720, true);
 	m_ShaderLibrary = CreateScope<ShaderLibrary>();
+	Renderer2D::Init();
 }
 
 void Sandbox2D::OnAttach()
@@ -47,12 +48,15 @@ void Sandbox2D::OnUpdate(TimeStep ts)
 	RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 	RenderCommand::Clear();
 
-	Renderer::BeginScene(m_CameraController->GetCamera());
-	m_FlatColorShader->Bind();
-	m_FlatColorShader->SetFloat4("u_Color", m_SquareColor);
-	Renderer::Submit(m_FlatColorShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
-	Renderer::EndSence();
+	Renderer2D::BeginScene(m_CameraController->GetCamera());
 
+
+	Renderer2D::DrawQuad({ 0,0 }, { 1,1 }, m_SquareColor);
+
+	Renderer2D::EndSence();
+	//m_FlatColorShader->Bind();
+	//m_FlatColorShader->SetFloat4("u_Color", m_SquareColor);
+	//Renderer2D::Submit(m_FlatColorShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 }
 
 void Sandbox2D::OnUIRender()

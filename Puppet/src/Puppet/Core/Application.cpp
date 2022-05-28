@@ -4,6 +4,7 @@
 #include "Puppet/Platform/OpenGL/OpenGLBuffer.h"
 #include "Puppet/Platform/OpenGL/OpenGLVertexArray.h"
 #include "Puppet/Renderer/Renderer.h"
+#include "Puppet/Renderer/Renderer2D.h"
 namespace Puppet {
 
 	Application* Application::s_Instance = nullptr;
@@ -15,6 +16,7 @@ namespace Puppet {
 		m_Window->SetEventCallback(PP_BIND_EVENT_FN(Application::OnEvent));
 		m_Window->SetVSync(false);
 		
+		//Init Renderer or Renderer2D
 		Renderer::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();

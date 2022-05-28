@@ -10,6 +10,7 @@
 #include "Puppet/Core/InputSystem.h"
 
 #include "Puppet/Renderer/Renderer.h"
+#include "Puppet/Renderer/Renderer2D.h"
 #include "Puppet/Renderer/RenderCommand.h"
 #include "Puppet/Renderer/Buffer.h"
 #include "Puppet/Renderer/Shader.h"
