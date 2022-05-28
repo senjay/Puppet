@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Event.h"
-#include "Puppet/MouseCodes.h"
+#include "Puppet/Core/MouseCodes.h"
 
 namespace Puppet {
 

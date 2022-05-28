@@ -4,7 +4,7 @@
 #include "Puppet/Events/KeyEvent.h"
 #include "Puppet/Events/MouseEvent.h"
 #include "WindowsInput.h"
-#include "Puppet/InputSystem.h"
+#include "Puppet/Core/InputSystem.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 namespace Puppet {

@@ -1,7 +1,7 @@
 #include "PPpch.h"
 #include "OrthographicCameraController.h"
-#include "Puppet/KeyCodes.h"
-#include "Puppet/InputSystem.h"
+#include "Puppet/Core/KeyCodes.h"
+#include "Puppet/Core/InputSystem.h"
 namespace Puppet {
 	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)
 		: m_AspectRatio(aspectRatio), m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio* m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel)

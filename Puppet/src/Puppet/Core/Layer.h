@@ -1,5 +1,5 @@
 #pragma once
-#include "Puppet/Core.h"
+#include "Puppet/Core/Core.h"
 #include "Puppet/Events/Event.h"
 #include "Puppet/Core/TimeStep.h"
 namespace Puppet {

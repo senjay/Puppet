@@ -1,5 +1,5 @@
 #pragma once
-#include "Puppet/Core.h"
+#include "Puppet/Core/Core.h"
 #include <string>
 namespace Puppet{
 	class Texture

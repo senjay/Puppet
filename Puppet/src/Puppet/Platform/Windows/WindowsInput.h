@@ -1,5 +1,5 @@
 #pragma once
-#include "Puppet/Input.h"
+#include "Puppet/Core/Input.h"
 
 namespace Puppet
 {

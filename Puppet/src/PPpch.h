@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <fstream>
-#include "Puppet/Log.h"
+#include "Puppet/Core/Log.h"
 
 #ifdef PP_PLATFORM_WINDOWS
 	#ifndef NOMINMAX

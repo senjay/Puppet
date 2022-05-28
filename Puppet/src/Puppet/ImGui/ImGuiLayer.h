@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Puppet/Layer.h"
+#include "Puppet/Core/Layer.h"
 #include "Puppet/Events/ApplicationEvent.h"
 #include "Puppet/Events/KeyEvent.h"
 #include "Puppet/Events/MouseEvent.h"

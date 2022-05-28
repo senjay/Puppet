@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Puppet/Core.h"
+#include "Puppet/Core/Core.h"
 #include "Layer.h"
 
 namespace Puppet {

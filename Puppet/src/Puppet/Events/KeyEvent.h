@@ -1,6 +1,6 @@
 #pragma once
 #include "Event.h"
-#include "Puppet/KeyCodes.h"
+#include "Puppet/Core/KeyCodes.h"
 #include <sstream>
 namespace Puppet {
 

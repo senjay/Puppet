@@ -2,12 +2,12 @@
 
 
 #include "Puppet/Core/TimeStep.h"
-#include "Puppet/Application.h"
-#include "Puppet/Layer.h"
+#include "Puppet/Core/Application.h"
+#include "Puppet/Core/Layer.h"
 #include "Puppet/ImGui/ImGuiLayer.h"
-#include "Puppet/KeyCodes.h"
-#include "Puppet/MouseCodes.h"
-#include "Puppet/InputSystem.h"
+#include "Puppet/Core/KeyCodes.h"
+#include "Puppet/Core/MouseCodes.h"
+#include "Puppet/Core/InputSystem.h"
 
 #include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Renderer/RenderCommand.h"
@@ -17,7 +17,7 @@
 #include "Puppet/Renderer/VertexArray.h"
 #include "Puppet/Renderer/OrthographicCameraController.h"
 
-#include "Puppet/Log.h"
+#include "Puppet/Core/Log.h"
 // -----Entry  Point------
-#include "Puppet/EntryPoint.h"
+#include "Puppet/Core/EntryPoint.h"
 // -----------------------

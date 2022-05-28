@@ -1,9 +1,9 @@
 #include "PPpch.h"
 #include "Application.h"
 #include <glad/glad.h>
-#include "Platform/OpenGL/OpenGLBuffer.h"
-#include "Platform/OpenGL/OpenGLVertexArray.h"
-#include "Renderer/Renderer.h"
+#include "Puppet/Platform/OpenGL/OpenGLBuffer.h"
+#include "Puppet/Platform/OpenGL/OpenGLVertexArray.h"
+#include "Puppet/Renderer/Renderer.h"
 namespace Puppet {
 
 	Application* Application::s_Instance = nullptr;

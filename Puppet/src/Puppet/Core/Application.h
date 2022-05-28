@@ -1,12 +1,12 @@
 #pragma once
 #include "Core.h"
-#include "Events/Event.h"
-#include "Events/ApplicationEvent.h"
-#include "Events/KeyEvent.h"
-#include "Events/MouseEvent.h"
+#include "Puppet/Events/Event.h"
+#include "Puppet/Events/ApplicationEvent.h"
+#include "Puppet/Events/KeyEvent.h"
+#include "Puppet/Events/MouseEvent.h"
 #include "LayerStack.h"
 #include "Window.h"
-#include "ImGui/ImGuiLayer.h"
+#include "Puppet/ImGui/ImGuiLayer.h"
 #include "Puppet/Core/TimeStep.h"
 #include "Puppet/Core/Timer.h"
 namespace Puppet {

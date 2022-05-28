@@ -3,7 +3,7 @@
 
 #include "PPpch.h"
 
-#include "Puppet/Core.h"
+#include "Puppet/Core/Core.h"
 #include "Puppet/Events/Event.h"
 
 namespace Puppet {

@@ -1,9 +1,9 @@
 // WindowsWindow.h
 #pragma once
 
-#include "Puppet/Window.h"
+#include "Puppet/Core/Window.h"
 #include "Puppet/Platform/OpenGL/OpenGLContext.h"
-class GLFWwindow;
+struct GLFWwindow;
 namespace Puppet {
 
 	// ÓÎÏ·µÄ´°¿Ú

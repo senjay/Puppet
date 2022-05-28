@@ -1,6 +1,6 @@
 #include "PPpch.h"
 #include "WindowsInput.h"
-#include "Puppet/Application.h"
+#include "Puppet/Core/Application.h"
 #include <GLFW/glfw3.h>
 
 namespace Puppet {
