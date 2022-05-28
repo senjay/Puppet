@@ -18,6 +18,3 @@
 #include "Puppet/Renderer/OrthographicCameraController.h"
 
 #include "Puppet/Core/Log.h"
-// -----Entry  Point------
-#include "Puppet/Core/EntryPoint.h"
-// -----------------------
