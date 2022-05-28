@@ -21,8 +21,8 @@ public:
 	
 	ExampleLayer() : Layer("Example")
 	{
-		m_Camera = std::make_shared<OrthographicCamera>(-1.6, 1.6, -0.9, 0.9);
-
+		m_Camera = CreateRef<OrthographicCamera>(-1.6, 1.6, -0.9, 0.9);
+		m_ShaderLibrary = CreateScope<ShaderLibrary>();
 		uint32_t indices[3] = { 0,1,2 };
 		float vertices[3 * 7] = {
 			-0.5, -0.5, 0,	1, 0, 0, 1,
@@ -67,7 +67,6 @@ public:
 				color=v_Color;
 			}
 		)";
-		m_Shader=Shader::Create(vertexSrc, fargmentSrc);
 
 		//------------second VBO Test------------//
 		float vertices2[4 * 5] = {
@@ -113,13 +112,15 @@ public:
 				color=u_Color;
 			}
 		)";
-		m_Shader2=Shader::Create(vertexSrc2, fargmentSrc2);
+		m_Shader2=Shader::Create("QuadShader",vertexSrc2, fargmentSrc2);
 
-		m_TexShader = Shader::Create("./assets/shaders/Texture.glsl");
+		m_ShaderLibrary->Add(m_Shader2->GetName(), m_Shader2);
+		m_ShaderLibrary->Load("TriangleShader", vertexSrc, fargmentSrc);
+		auto TextureShader = m_ShaderLibrary->Load("./assets/shaders/Texture.glsl");
 		m_LogoTexture = Texture2D::Create("./assets/textures/Logo.png");
 		m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
-		m_TexShader->Bind();
-		m_TexShader->SetInt("u_Texture", 0);
+		TextureShader->Bind();
+		TextureShader->SetInt("u_Texture", 0);
 	}
 
 	void OnUpdate(TimeStep ts) override
@@ -147,8 +148,9 @@ public:
 		Renderer::BeginScene(m_Camera);
 		
 		static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
-		m_Shader2->Bind();
-		m_Shader2->SetFloat4("u_Color", m_QuadColor);
+		
+		m_ShaderLibrary->Get("QuadShader")->Bind();
+		m_ShaderLibrary->Get("QuadShader")->SetFloat4("u_Color", m_QuadColor);
 		for (int i = 0; i < 20; ++i)
 		{
 			for (int j = 0; j < 20; ++j)
@@ -156,16 +158,16 @@ public:
 				glm::vec3 pos = { i * 0.11f,j * 0.11f,0.0f };
 				glm::mat4 Modeltransform = glm::translate(glm::mat4(1.0f), pos);
 				Modeltransform *= scale;//scale
-				Renderer::Submit(m_Shader2, m_QuadVertexArray, Modeltransform);
+				Renderer::Submit(m_ShaderLibrary->Get("QuadShader"), m_QuadVertexArray, Modeltransform);
 			}
 		}
 		
 		m_Texture->Bind();
-		Renderer::Submit(m_TexShader, m_QuadVertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		Renderer::Submit(m_ShaderLibrary->Get("Texture"), m_QuadVertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 		m_LogoTexture->Bind();
-		Renderer::Submit(m_TexShader, m_QuadVertexArray, 
+		Renderer::Submit(m_ShaderLibrary->Get("Texture"), m_QuadVertexArray,
 			glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
-		//Renderer::Submit(m_Shader, m_VertexArray);
+		Renderer::Submit(m_ShaderLibrary->Get("TriangleShader"), m_VertexArray, glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f)));
 		Renderer::EndSence();
 	}
 
@@ -209,12 +211,12 @@ public:
 		return false;
 	}
 private:
-	Ref<Shader>m_Shader;
+	Scope<ShaderLibrary>m_ShaderLibrary;
 	Ref<VertexBuffer>m_VertexBuffer;
 	Ref<IndexBuffer>m_IndexBuffer;
 	Ref<VertexArray>m_VertexArray;
 
-	Ref<Shader>m_Shader2,m_TexShader;
+	Ref<Shader>m_Shader2;
 	Ref<VertexArray>m_QuadVertexArray;
 	Ref<OrthographicCamera>m_Camera;
 	Ref<Texture2D>m_Texture,m_LogoTexture;

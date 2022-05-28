@@ -19,11 +19,14 @@ namespace Puppet
 
 	OpenGLShader::OpenGLShader(const std::string& glslpath)
 	{
+		std::filesystem::path path = glslpath;
+		m_Name =path.stem().string();
 		std::string source=ReadFile(glslpath);
 		auto shaderSources = PreProcess(source);
 		Compile(shaderSources);
 	}
-	OpenGLShader::OpenGLShader(const std::string& vertexSrc, const std::string& fragmentSrc)
+	OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc)
+		:m_Name(name)
 	{
 
 		std::unordered_map<GLenum, std::string> shaderSources{

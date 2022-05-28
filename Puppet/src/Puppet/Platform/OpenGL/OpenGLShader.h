@@ -9,7 +9,7 @@ namespace Puppet
 	{
 	public:
 		OpenGLShader(const std::string& glslpath);
-		OpenGLShader(const std::string& vertexSrc, const std::string& fragmentSrc);
+		OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
 		~OpenGLShader();
 
 		virtual void Bind() const override;
@@ -22,6 +22,8 @@ namespace Puppet
 		virtual void SetFloat3(const std::string& name, const glm::vec3& value) override;
 		virtual void SetFloat4(const std::string& name, const glm::vec4& value) override;
 		virtual void SetMat4(const std::string& name, const glm::mat4& value) override;
+
+		virtual std::string GetName()const override { return m_Name; }
 		void UploadUniformInt(const std::string& name, int value);
 		void UploadUniformIntArray(const std::string& name, int* values, uint32_t count);
 		void UploadUniformFloat(const std::string& name, float value);
@@ -36,6 +38,7 @@ namespace Puppet
 		void Compile(const std::unordered_map<GLenum, std::string>&shaderSources);
 	private:
 		uint32_t m_RendererID;
+		std::string m_Name;
 	};
 
 }
