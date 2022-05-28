@@ -23,10 +23,12 @@ namespace Puppet {
 			void PushOverlay(Layer* layer);
 	private:
 			bool OnWindowClose(WindowCloseEvent& e);
-
+			bool OnWindowResize(WindowResizeEvent& e);
+	private:
 			Scope<Window> m_Window;
 			ImGuiLayer* m_ImGuiLayer;
 			bool m_Running = true;
+			bool m_Minimized = false;
 			LayerStack m_LayerStack;
 
 			TimeStep m_TimeStep;

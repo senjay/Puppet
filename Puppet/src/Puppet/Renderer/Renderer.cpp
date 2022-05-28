@@ -10,9 +10,9 @@ namespace Puppet {
 		RenderCommand::Init();
 	}
 
-	void Renderer::BeginScene(Ref<OrthographicCamera>& camera)
+	void Renderer::BeginScene(OrthographicCamera& camera)
 	{
-		m_SceneData->ViewProjectionMatrix = camera->GetViewProjectionMatrix();
+		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
 	}
 	void Renderer::EndSence()
 	{

@@ -15,6 +15,7 @@
 #include "Puppet/Renderer/Shader.h"
 #include "Puppet/Renderer/Texture.h"
 #include "Puppet/Renderer/VertexArray.h"
+#include "Puppet/Renderer/OrthographicCameraController.h"
 
 #include "Puppet/Log.h"
 // -----Entry  Point------

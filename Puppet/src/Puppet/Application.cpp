@@ -41,11 +41,21 @@ namespace Puppet {
 		m_Running = false;
 		return true;
 	}
+	bool Application::OnWindowResize(WindowResizeEvent& e)
+	{
+		if (e.GetWidth() == 0 || e.GetHeight() == 0)
+		{
+			m_Minimized = true;
+			return false;
+		}
+		m_Minimized = false;
+		return false;
+	}
 	void Application::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<WindowCloseEvent>(PP_BIND_EVENT_FN(Application::OnWindowClose));
-		//dispatcher.Dispatch<WindowResizeEvent>(PP_BIND_EVENT_FN(Application::OnWindowResize));
+		dispatcher.Dispatch<WindowResizeEvent>(PP_BIND_EVENT_FN(Application::OnWindowResize));
 		//层:事件的响应是反向的
 		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
 		{
@@ -61,9 +71,11 @@ namespace Puppet {
 		while (m_Running)
 		{
 			TimeStep timeStep = timer.Reset();
-			for (Layer* layer : m_LayerStack)
-				layer->OnUpdate(timeStep);
-
+			if (!m_Minimized)
+			{
+				for (Layer* layer : m_LayerStack)
+					layer->OnUpdate(timeStep);
+			}
 			m_ImGuiLayer->Begin();
 			for (Layer* layer : m_LayerStack)
 			{

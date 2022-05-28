@@ -21,7 +21,7 @@ public:
 	
 	ExampleLayer() : Layer("Example")
 	{
-		m_Camera = CreateRef<OrthographicCamera>(-1.6, 1.6, -0.9, 0.9);
+		m_CameraController = CreateRef<OrthographicCameraController>(1280.0f/720,true);
 		m_ShaderLibrary = CreateScope<ShaderLibrary>();
 		uint32_t indices[3] = { 0,1,2 };
 		float vertices[3 * 7] = {
@@ -128,24 +128,16 @@ public:
 		PP_TRACE("Delta time: {0}s ,{1}ms", ts.GetSeconds(), ts.GetMillseconds());
 		float tsSec = ts.GetSeconds();
 		m_FPS =static_cast<int>(1.0 / tsSec);
-		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::W))
-			m_CameraPosition.y += m_CameraMoveSpeed * tsSec;
-		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::S))
-			m_CameraPosition.y -= m_CameraMoveSpeed * tsSec;
-		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::A))
-			m_CameraPosition.x -= m_CameraMoveSpeed * tsSec;
-		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::D))
-			m_CameraPosition.x += m_CameraMoveSpeed * tsSec;
-		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::E))
-			m_CameraRotation += m_CameraRotationSpeed * tsSec;
-		if (Puppet::InputSystem::getInstance().IsKeyPressed(Puppet::Key::Q))
-			m_CameraRotation -= m_CameraRotationSpeed * tsSec;
+
+		//camera Update
+		m_CameraController->OnUpdate(ts);
+
+
+		//Render
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::Clear();
-		m_Camera->SetRotation(m_CameraRotation);
-		m_Camera->SetPosition(m_CameraPosition);
-
-		Renderer::BeginScene(m_Camera);
+		
+		Renderer::BeginScene(m_CameraController->GetCamera());
 		
 		static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 		
@@ -173,14 +165,7 @@ public:
 
 	void OnEvent(Puppet::Event& event) override
 	{
-		
-		EventDispatcher dispatcher(event);
-		dispatcher.Dispatch<KeyPressedEvent>(PP_BIND_EVENT_FN(ExampleLayer::OnKeyPressedEvent));
-		if (event.GetEventType() == Puppet::EventType::KeyPressed)
-		{
-			Puppet::KeyPressedEvent& e = (Puppet::KeyPressedEvent&)event;
-			PP_TRACE("{0}", (char)e.GetKeyCode());
-		}
+		m_CameraController->OnEvent(event);
 	}
 	void OnUIRender()override
 	{
@@ -218,12 +203,8 @@ private:
 
 	Ref<Shader>m_Shader2;
 	Ref<VertexArray>m_QuadVertexArray;
-	Ref<OrthographicCamera>m_Camera;
+	Ref<OrthographicCameraController>m_CameraController;
 	Ref<Texture2D>m_Texture,m_LogoTexture;
-	glm::vec3 m_CameraPosition = { 0.0f,0.0f,0.0f };
-	float m_CameraRotation = 0.0f;
-	float m_CameraMoveSpeed=2.0f;
-	float m_CameraRotationSpeed = 10.0f;
 	glm::vec4 m_QuadColor = { 0.0f,0.0f,0.0f,1.0f};
 
 	int m_FPS=0;
