@@ -165,6 +165,8 @@ public:
 
 	void OnEvent(Puppet::Event& event) override
 	{
+		//单个改变w或者h,会触发调整camera的m_AspectRatio和glViewport
+		//成比例改变w和h,只会触发glViewport
 		m_CameraController->OnEvent(event);
 	}
 	void OnUIRender()override

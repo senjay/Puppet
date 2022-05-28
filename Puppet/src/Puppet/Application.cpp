@@ -43,12 +43,15 @@ namespace Puppet {
 	}
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
-		if (e.GetWidth() == 0 || e.GetHeight() == 0)
+		uint32_t w = e.GetWidth();
+		uint32_t h = e.GetHeight();
+		if (w== 0 || h== 0)
 		{
 			m_Minimized = true;
 			return false;
 		}
 		m_Minimized = false;
+		Renderer::OnWindowResize(w, h);
 		return false;
 	}
 	void Application::OnEvent(Event& e)
