@@ -1,6 +1,7 @@
 #pragma once
 #include "Puppet/Renderer/Texture.h"
 #include "stb_image.h"
+#include <glad/glad.h>
 namespace Puppet {
 	class OpenGLTexture2D:public Texture2D
 	{
@@ -12,7 +13,7 @@ namespace Puppet {
 		uint32_t GetHeight() const override { return m_Height; };
 		uint32_t GetRendererID() const override { return m_RendererID; };
 
-		void SetData(void* data, uint32_t size)override {};
+		void SetData(void* data, uint32_t size)override;
 
 		void Bind(uint32_t slot = 0)const override;
 
@@ -24,6 +25,7 @@ namespace Puppet {
 		std::string m_Path;
 		uint32_t m_Width, m_Height;
 		uint32_t m_RendererID;
+		GLenum m_InternalFormat, m_DataFormat;
 	};
 
 }

@@ -30,7 +30,7 @@ void Sandbox2D::OnAttach()
 	m_SquareVA->AddVertexBuffer(QuadVBuffer);
 	m_SquareVA->SetIndexBuffer(QuadIndexBuff);
 	m_FlatColorShader= m_ShaderLibrary->Load("./assets/shaders/FlatColor.glsl");
-	//m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
+	m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
 }
 
 void Sandbox2D::OnDetach()
@@ -51,8 +51,9 @@ void Sandbox2D::OnUpdate(TimeStep ts)
 	Renderer2D::BeginScene(m_CameraController->GetCamera());
 
 
-	Renderer2D::DrawQuad({ 0,0 }, { 1,1 }, m_SquareColor);
-
+	Renderer2D::DrawQuad({ 0,0 }, { 2,1.5 }, m_SquareColor);
+	Renderer2D::DrawQuad({ -1,0 }, { 1,1 }, {0.8,0.2,0.3,1});
+	Renderer2D::DrawQuad({ 0,0,-0.1 }, { 10,10 }, m_Texture);
 	Renderer2D::EndSence();
 	//m_FlatColorShader->Bind();
 	//m_FlatColorShader->SetFloat4("u_Color", m_SquareColor);

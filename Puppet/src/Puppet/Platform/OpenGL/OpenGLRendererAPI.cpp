@@ -8,6 +8,7 @@ namespace Puppet {
 		//源色:后绘制的
 		//目标色:先绘制的
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_DEPTH_TEST);
 	}
 	void OpenGLRendererAPI::SetClearColor(const glm::vec4& color)
 	{
@@ -22,6 +23,7 @@ namespace Puppet {
 	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexArray>& vertexArray)
 	{
 		glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	void OpenGLRendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)

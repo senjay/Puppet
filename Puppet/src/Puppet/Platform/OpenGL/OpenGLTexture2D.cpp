@@ -1,6 +1,6 @@
 #include "PPpch.h"
 #include "OpenGLTexture2D.h"
-#include <glad/glad.h>
+
 namespace Puppet {
 
 
@@ -14,7 +14,7 @@ namespace Puppet {
 		m_Width = width;
 		m_Height = height;
 
-		GLenum internalFormat = 0, dataFormat;
+		GLenum internalFormat = 0, dataFormat=0;
 		if (channels == 4)
 		{
 			internalFormat = GL_RGBA8;
@@ -25,6 +25,9 @@ namespace Puppet {
 			internalFormat = GL_RGB8;
 			dataFormat = GL_RGB;
 		}
+		m_InternalFormat = internalFormat;
+		m_DataFormat = dataFormat;
+
 		PP_CORE_ASSERT(internalFormat && dataFormat, "Picture format channel not supported!");
 
 		glCreateTextures(GL_TEXTURE_2D,1,&m_RendererID);
@@ -33,20 +36,45 @@ namespace Puppet {
 		
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		
+		//GL_TEXTURE_WRAP_S:X方向;GL_TEXTURE_WRAP_T:Y方向;
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		//dataFormat:what dataFormat our picture 
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, dataFormat, GL_UNSIGNED_BYTE, (const void*)data);
 		
 		stbi_image_free(data); 
 	}
 
-	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height):m_Width(width),m_Height(height)
+	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
+		:m_Width(width),m_Height(height)
 	{
 
+		m_InternalFormat = GL_RGBA8;
+		m_DataFormat = GL_RGBA;
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
+		//internalFormat:how opengl storate texture 
+		glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		//GL_TEXTURE_WRAP_S:X方向;GL_TEXTURE_WRAP_T:Y方向;
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	}
 
 	OpenGLTexture2D::~OpenGLTexture2D()
 	{
 		glDeleteTextures(1, &m_RendererID);
+	}
+
+	void OpenGLTexture2D::SetData(void* data, uint32_t size)
+	{
+		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
+		PP_CORE_ASSERT(size == m_Width * m_Height * bpp, "Data must be entire texture!");
+		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, (const void*)data);
 	}
 
 	void OpenGLTexture2D::Bind(uint32_t slot) const
