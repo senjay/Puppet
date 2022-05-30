@@ -15,7 +15,7 @@
 #include <unordered_set>
 #include <fstream>
 #include "Puppet/Core/Log.h"
-
+#include "Puppet/Debug/Instrumentor.h"
 #ifdef PP_PLATFORM_WINDOWS
 	#ifndef NOMINMAX
 	// See github.com/skypjack/entt/wiki/Frequently-Asked-Questions#warning-c4003-the-min-the-max-and-the-macro
