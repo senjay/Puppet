@@ -66,7 +66,7 @@ namespace Puppet {
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 	}
-	void Renderer2D::EndSence()
+	void Renderer2D::EndScene()
 	{
 		PP_PROFILE_FUNCTION();
 

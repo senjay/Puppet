@@ -146,7 +146,7 @@ public:
 		Renderer::Submit(m_ShaderLibrary->Get("Texture"), m_QuadVertexArray,
 			glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 		Renderer::Submit(m_ShaderLibrary->Get("TriangleShader"), m_VertexArray, glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f)));
-		Renderer::EndSence();
+		Renderer::EndScene();
 	}
 
 	void OnEvent(Puppet::Event& event) override

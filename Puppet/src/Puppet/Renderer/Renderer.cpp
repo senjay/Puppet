@@ -23,7 +23,7 @@ namespace Puppet {
 	{
 		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
 	}
-	void Renderer::EndSence()
+	void Renderer::EndScene()
 	{
 
 	}

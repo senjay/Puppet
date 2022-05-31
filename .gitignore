@@ -17,7 +17,7 @@ bin-int/
 *.user
 *.userosscache
 *.sln.docstates
-
+**/FlappyRocket/
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
