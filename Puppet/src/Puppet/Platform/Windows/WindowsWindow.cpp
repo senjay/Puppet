@@ -9,31 +9,36 @@
 #include <GLFW/glfw3.h>
 namespace Puppet {
 
-	static bool s_GLFWInitialized = false;
+	static uint8_t  s_GLFWWindowCount = 0;
 	static void GLFWErrorCallback(int error_code, const char* description)
 	{
 		PP_CORE_ERROR("glfw error ({0}): {1}", error_code, description);
 	}
 	// step 1
-	Window* Window::Create(const WindowProps& props)
+	Scope<Window> Window::Create(const WindowProps& props)
 	{
-		return new WindowsWindow(props);
+		return CreateScope<WindowsWindow>(props);
 	}
 
 	// step 2
 	WindowsWindow::WindowsWindow(const WindowProps& props)
 	{
+		PP_PROFILE_FUNCTION();
+
 		Init(props);
 	}
 
 	WindowsWindow::~WindowsWindow()
 	{
+		PP_PROFILE_FUNCTION();
+
 		Shutdown();
 	}
 
 	// step 3
 	void WindowsWindow::Init(const WindowProps& props)
 	{
+		PP_PROFILE_FUNCTION();
 
 		Puppet::InputSystem::getInstance().initialize(new WindowsInput());
 		
@@ -43,16 +48,19 @@ namespace Puppet {
 
 		PP_CORE_TRACE("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
-		if (!s_GLFWInitialized)
+		if (s_GLFWWindowCount==0)
 		{
+			PP_PROFILE_SCOPE("glfwInit");
 			int success = glfwInit();
 			PP_CORE_ASSERT(success,"Could not initialize GLFW!");
 			glfwSetErrorCallback(GLFWErrorCallback);
-			s_GLFWInitialized = true;
 		}
 
-
-		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+		{
+			PP_PROFILE_SCOPE("glfwCreateWindow");
+			m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+			++s_GLFWWindowCount;
+		}
 		m_Context = new OpenGLContext(m_Window);
 		m_Context->Init();
 		glfwSetWindowUserPointer(m_Window, &m_Data);
@@ -140,18 +148,30 @@ namespace Puppet {
 
 	void WindowsWindow::Shutdown()
 	{
+		PP_PROFILE_FUNCTION();
+
 		glfwDestroyWindow(m_Window);
+		--s_GLFWWindowCount;
+
+		if (s_GLFWWindowCount == 0)
+		{
+			glfwTerminate();
+		}
 	}
 
 	// step 4
 	void WindowsWindow::OnUpdate()
 	{
+		PP_PROFILE_FUNCTION();
+
 		glfwPollEvents();
 		m_Context->SwapBuffers();
 	}
 
 	void WindowsWindow::SetVSync(bool enable)
 	{
+		PP_PROFILE_FUNCTION();
+
 		if (enable)
 			glfwSwapInterval(1);
 		else

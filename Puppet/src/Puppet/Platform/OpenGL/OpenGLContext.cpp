@@ -15,6 +15,8 @@ namespace Puppet {
 
 	void OpenGLContext::Init()
 	{
+		PP_PROFILE_FUNCTION();
+
 		// 将当前的游戏窗口和OpenGL绑定// OpenGL C API
 		glfwMakeContextCurrent(m_WindowHandle);
 		// 初始化Glad，方便之后调用简化渲染
@@ -29,6 +31,8 @@ namespace Puppet {
 
 	void OpenGLContext::SwapBuffers()
 	{
+		PP_PROFILE_FUNCTION();
+
 		glfwSwapBuffers(m_WindowHandle);
 	}
 

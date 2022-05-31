@@ -1,5 +1,6 @@
 #include "PPpch.h"
 #include "Renderer.h"
+#include "Renderer2D.h"
 #include "OrthographicCamera.h"
 namespace Puppet {
 
@@ -7,7 +8,10 @@ namespace Puppet {
 
 	void Renderer::Init()
 	{
+		PP_PROFILE_FUNCTION();
+
 		RenderCommand::Init();
+		Renderer2D::Init();
 	}
 
 	void Renderer::OnWindowResize(uint32_t width, uint32_t height)
@@ -22,6 +26,10 @@ namespace Puppet {
 	void Renderer::EndSence()
 	{
 
+	}
+	void Renderer::Shutdown()
+	{
+		Renderer2D::Shutdown();
 	}
 	void Renderer::Submit(const Ref<Shader>& shader, const Ref<VertexArray>& vertexArray, const glm::mat4& transform)
 	{

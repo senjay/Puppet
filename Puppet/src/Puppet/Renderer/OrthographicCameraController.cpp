@@ -11,6 +11,8 @@ namespace Puppet {
 	}
 	void OrthographicCameraController::OnUpdate(TimeStep ts)
 	{
+		PP_PROFILE_FUNCTION();
+
 		auto& input=InputSystem::getInstance();
 		float tsSeconds = ts.GetSeconds();
 		if (input.IsKeyPressed(Key::A))
@@ -56,6 +58,8 @@ namespace Puppet {
 	}
 	void OrthographicCameraController::OnEvent(Event& e)
 	{
+		PP_PROFILE_FUNCTION();
+
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<MouseScrolledEvent>(PP_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
 		dispatcher.Dispatch<WindowResizeEvent>(PP_BIND_EVENT_FN(OrthographicCameraController::OnWindowResized));
@@ -67,6 +71,8 @@ namespace Puppet {
 	}
 	bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	{
+		PP_PROFILE_FUNCTION();
+
 		m_ZoomLevel -= e.GetYOffset() * 0.25f;
 		m_ZoomLevel = std::max(m_ZoomLevel, 0.25f);
 		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
@@ -74,6 +80,8 @@ namespace Puppet {
 	}
 	bool OrthographicCameraController::OnWindowResized(WindowResizeEvent& e)
 	{
+		PP_PROFILE_FUNCTION();
+
 		OnResize((float)e.GetWidth(), (float)e.GetHeight());
 		return false;
 	}

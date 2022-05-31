@@ -10,6 +10,8 @@ namespace Puppet {
 	Application* Application::s_Instance = nullptr;
 	Application::Application()
 	{
+		PP_PROFILE_FUNCTION();
+
 		PP_CORE_ASSERT(!s_Instance, "Application Instance is exits");
 		s_Instance = this;
 		m_Window = Scope<Window>(Window::Create());
@@ -25,15 +27,21 @@ namespace Puppet {
 	}
 	Application::~Application()
 	{
+		PP_PROFILE_FUNCTION();
 
+		Renderer::Shutdown();
 	}
 	void Application::PushLayer(Layer* layer)
 	{
+		PP_PROFILE_FUNCTION();
+
 		m_LayerStack.PushLayer(layer);
 		layer->OnAttach();
 	}
 	void Application::PushOverlay(Layer* layer)
 	{
+		PP_PROFILE_FUNCTION();
+
 		m_LayerStack.PushOverlay(layer);
 		layer->OnAttach();
 	}
@@ -45,6 +53,8 @@ namespace Puppet {
 	}
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
+		PP_PROFILE_FUNCTION();
+
 		uint32_t w = e.GetWidth();
 		uint32_t h = e.GetHeight();
 		if (w== 0 || h== 0)
@@ -58,6 +68,8 @@ namespace Puppet {
 	}
 	void Application::OnEvent(Event& e)
 	{
+		PP_PROFILE_FUNCTION();
+
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<WindowCloseEvent>(PP_BIND_EVENT_FN(Application::OnWindowClose));
 		dispatcher.Dispatch<WindowResizeEvent>(PP_BIND_EVENT_FN(Application::OnWindowResize));
@@ -71,22 +83,30 @@ namespace Puppet {
 	}
 	void Application::Run()
 	{
+		PP_PROFILE_FUNCTION();
+
 		Timer timer;
 		//äÖÈ¾²ã´ÓÇ°Íùºó
 		while (m_Running)
 		{
+			PP_PROFILE_SCOPE("Run Loop");
 			TimeStep timeStep = timer.Reset();
 			if (!m_Minimized)
 			{
-				for (Layer* layer : m_LayerStack)
-					layer->OnUpdate(timeStep);
+				{
+					PP_PROFILE_SCOPE("LayerStack OnUpdate");
+					for (Layer* layer : m_LayerStack)
+						layer->OnUpdate(timeStep);
+				}
+				m_ImGuiLayer->Begin();
+				{
+					PP_PROFILE_SCOPE("LayerStack OnUIRender");
+					for (Layer* layer : m_LayerStack)
+						layer->OnUIRender();
+				}
+				m_ImGuiLayer->End();
 			}
-			m_ImGuiLayer->Begin();
-			for (Layer* layer : m_LayerStack)
-			{
-				layer->OnUIRender();
-			}
-			m_ImGuiLayer->End();
+			
 			m_Window->OnUpdate();
 		}
 	}

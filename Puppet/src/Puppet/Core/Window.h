@@ -44,7 +44,7 @@ namespace Puppet {
 
 		// 这里定义一个静态的Create方法，参数为WindowProps，全部使用的默认数据
 		// 这个方法在WindowsWindow.cpp里面实现
-		static Window* Create(const WindowProps& prop = WindowProps());
+		static Scope<Window> Create(const WindowProps& prop = WindowProps());
 	};
 }
 

@@ -17,7 +17,7 @@ namespace Puppet {
 
 	void Renderer2D::Init()
 	{
-		RenderCommand::Init();
+		PP_PROFILE_FUNCTION();
 
 		s_Data = new Renderer2DStorage();
 
@@ -55,15 +55,21 @@ namespace Puppet {
 	}
 	void Renderer2D::Shutdown()
 	{
+		PP_PROFILE_FUNCTION();
+
 		delete s_Data;
 	}
 	void Renderer2D::BeginScene(OrthographicCamera& camera)
 	{
+		PP_PROFILE_FUNCTION();
+
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 	}
 	void Renderer2D::EndSence()
 	{
+		PP_PROFILE_FUNCTION();
+
 	}
 	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
 	{
@@ -71,6 +77,8 @@ namespace Puppet {
 	}
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
+		PP_PROFILE_FUNCTION();
+
 		s_Data->WhiteTexture->Bind();
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetFloat4("u_Color", color);
@@ -85,6 +93,8 @@ namespace Puppet {
 	}
 	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture)
 	{
+		PP_PROFILE_FUNCTION();
+
 		texture->Bind();
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetFloat4("u_Color", glm::vec4(1.0f));
