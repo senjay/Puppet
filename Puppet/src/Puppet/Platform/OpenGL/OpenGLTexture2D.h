@@ -19,7 +19,10 @@ namespace Puppet {
 
 		bool IsLoaded() const override { return true; };
 
-		bool operator==(const Texture& other) const override { return true; };
+		bool operator==(const Texture& other) const override 
+		{ 
+			return m_RendererID== other.GetRendererID();
+		};
 		
 	private:
 		std::string m_Path;

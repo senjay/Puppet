@@ -9,27 +9,7 @@ Sandbox2D::Sandbox2D() : Layer("Sandbox2D")
 void Sandbox2D::OnAttach()
 {
 	PP_PROFILE_FUNCTION();
-	float vertices[4 * 5] = {
-		-0.5, -0.5, 0,
-		 0.5, -0.5, 0,
-		 0.5,  0.5, 0,
-		-0.5,  0.5, 0,
-	};
-	uint32_t indices[6] = { 0,1,2,2,3,0 };
-	Ref<VertexBuffer>QuadVBuffer;
-	QuadVBuffer = VertexBuffer::Create(vertices, sizeof(vertices));
-	{
-		BufferLayout layout = {
-		{ShaderDataType::Float3,"a_Position"},
-		};
-		QuadVBuffer->SetLayout(layout);
-	}
-	Ref<IndexBuffer>QuadIndexBuff;
-	QuadIndexBuff = IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
-	m_SquareVA = VertexArray::Create();
-	m_SquareVA->AddVertexBuffer(QuadVBuffer);
-	m_SquareVA->SetIndexBuffer(QuadIndexBuff);
-	m_FlatColorShader= m_ShaderLibrary->Load("./assets/shaders/FlatColor.glsl");
+
 	m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
 }
 
@@ -56,11 +36,13 @@ void Sandbox2D::OnUpdate(TimeStep ts)
 	{
 		PP_PROFILE_SCOPE("Renderer Draw");
 		Renderer2D::BeginScene(m_CameraController->GetCamera());
-		Renderer2D::DrawQuad({ 0,0 }, { 2,1.5 }, m_SquareColor);
-		Renderer2D::DrawQuad({ -1,0 }, { 1,1 }, { 0.8,0.2,0.3,1 });
+		Renderer2D::DrawQuad({ 1.0f,1.0f }, { 2,1.5 }, m_SquareColor);
+		Renderer2D::DrawQuad({ -1,0 }, { 1,1 }, { 0.0,0.2,1.0,1 });
+		Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 2.0f, 2.8f }, { 0.0f, 0.8f, 0.3f, 1.0f });
+		//Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f });
 		Renderer2D::DrawQuad({ 0,0,-0.1 }, { 10,10 }, m_Texture, 10.0f);
-		Renderer2D::DrawRotatedQuad({ -1,1 }, { 1,1 }, 30,{ 0.8,0.2,0.3,1 });
-		Renderer2D::DrawRotatedQuad({ 1,1 }, { 1,1 }, 45,m_Texture, 5.0f, { 0.1,0.8,0.2,1.0 });
+		//Renderer2D::DrawRotatedQuad({ -1,1 }, { 1,1 }, 30,{ 0.8,0.2,0.3,1 });
+		//Renderer2D::DrawRotatedQuad({ 1,1 }, { 1,1 }, 45,m_Texture, 5.0f, { 0.1,0.8,0.2,1.0 });
 		Renderer2D::EndScene();
 	}
 }

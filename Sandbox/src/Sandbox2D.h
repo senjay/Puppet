@@ -23,9 +23,6 @@ private:
 	Scope<ShaderLibrary>m_ShaderLibrary;
 	Ref<OrthographicCameraController>m_CameraController;
 	Ref<Texture2D>m_Texture;
-
-	Ref<VertexArray> m_SquareVA;
-	Ref<Shader> m_FlatColorShader;
 	glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
 	int m_FPS;
 };
