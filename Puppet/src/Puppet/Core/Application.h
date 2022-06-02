@@ -18,6 +18,7 @@ namespace Puppet {
 			static Application& Get() { return *s_Instance; }
 			Window& GetWindow() { return *m_Window; }
 			void Run();
+			void Close();
 			void OnEvent(Event& e);
 			void PushLayer(Layer* layer);
 			void PushOverlay(Layer* layer);

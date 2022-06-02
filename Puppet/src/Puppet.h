@@ -13,6 +13,7 @@
 #include "Puppet/Renderer/Renderer2D.h"
 #include "Puppet/Renderer/RenderCommand.h"
 #include "Puppet/Renderer/Buffer.h"
+#include "Puppet/Renderer/Framebuffer.h"
 #include "Puppet/Renderer/Shader.h"
 #include "Puppet/Renderer/Texture.h"
 #include "Puppet/Renderer/VertexArray.h"

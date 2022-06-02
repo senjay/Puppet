@@ -11,6 +11,11 @@ void Sandbox2D::OnAttach()
 	PP_PROFILE_FUNCTION();
 
 	m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
+	FramebufferSpecification fbSpec;
+	auto& app = Application::Get();
+	fbSpec.Width = app.GetWindow().GetWidth();
+	fbSpec.Height = app.GetWindow().GetHeight();
+	m_Framebuffer = Framebuffer::Create(fbSpec);
 }
 
 void Sandbox2D::OnDetach()
@@ -32,6 +37,7 @@ void Sandbox2D::OnUpdate(TimeStep ts)
 
 	{
 		PP_PROFILE_SCOPE("Renderer Prep");
+		m_Framebuffer->Bind();
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::Clear();
 	}
@@ -41,7 +47,7 @@ void Sandbox2D::OnUpdate(TimeStep ts)
 		Renderer2D::DrawRotatedQuad({ 1.0f, 0.0f }, { 0.8f, 0.8f }, -45.0f, { 0.8f, 0.2f, 0.3f, 1.0f });
 		Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
 		Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, m_SquareColor);
-		Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, m_Texture, 10.0f);
+		Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, m_Texture, 1.0f);
 		Renderer2D::DrawRotatedQuad({ -2.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, 45, m_Texture, 20.0f);
 		Renderer2D::EndScene();
 		Renderer2D::BeginScene(m_CameraController->GetCamera());
@@ -54,6 +60,7 @@ void Sandbox2D::OnUpdate(TimeStep ts)
 			}
 		}
 		Renderer2D::EndScene();
+		m_Framebuffer->Unbind();
 	}
 }
 
@@ -71,6 +78,9 @@ void Sandbox2D::OnUIRender()
 	ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 	ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 	ImGui::ColorEdit4("Quad Color", glm::value_ptr(m_SquareColor));
+	//uint32_t textureid=m_Texture->GetRendererID();
+	uint32_t textureid = m_Framebuffer->GetColorAttachmentRendererID();
+	ImGui::Image((void*)textureid, ImVec2(1280, 720));
 	ImGui::End();
 }
 

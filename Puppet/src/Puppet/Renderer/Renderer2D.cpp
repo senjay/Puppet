@@ -17,7 +17,7 @@ namespace Puppet {
 	};
 	struct Renderer2DData
 	{
-		static const  uint32_t MaxQuads = 1;
+		static const  uint32_t MaxQuads = 20000;
 		static const  uint32_t MaxVertices = MaxQuads * 4;
 		static const  uint32_t MaxIndices = MaxQuads * 6;
 		static const uint32_t MaxTextureSlots = 32; // TODO: RenderCaps
@@ -229,7 +229,7 @@ namespace Puppet {
 		PP_PROFILE_FUNCTION();
 
 		constexpr size_t quadVertexCount = 4;
-		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
+		constexpr glm::vec2 textureCoords[4] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 
 		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
 			NextBatch();
