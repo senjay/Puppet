@@ -1,7 +1,7 @@
 #include "PPpch.h"
 #include "OrthographicCameraController.h"
 #include "Puppet/Core/KeyCodes.h"
-#include "Puppet/Core/InputSystem.h"
+#include "Puppet/Core/Input.h"
 namespace Puppet {
 	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)
 		: m_AspectRatio(aspectRatio), m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio* m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel)
@@ -13,25 +13,24 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		auto& input=InputSystem::getInstance();
 		float tsSeconds = ts.GetSeconds();
-		if (input.IsKeyPressed(Key::A))
+		if (Input::IsKeyPressed(Key::A))
 		{
 			m_CameraPosition.x -= cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * tsSeconds;
 			m_CameraPosition.y -= sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * tsSeconds;
 		}
-		else if (input.IsKeyPressed(Key::D))
+		else if (Input::IsKeyPressed(Key::D))
 		{
 			m_CameraPosition.x += cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * tsSeconds;
 			m_CameraPosition.y += sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * tsSeconds;
 		}
 
-		if (input.IsKeyPressed(Key::W))
+		if (Input::IsKeyPressed(Key::W))
 		{
 			m_CameraPosition.x += -sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * tsSeconds;
 			m_CameraPosition.y += cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * tsSeconds;
 		}
-		else if (input.IsKeyPressed(Key::S))
+		else if (Input::IsKeyPressed(Key::S))
 		{
 			m_CameraPosition.x -= -sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * tsSeconds;
 			m_CameraPosition.y -= cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * tsSeconds;
@@ -39,9 +38,9 @@ namespace Puppet {
 
 		if (m_Rotation)
 		{
-			if (input.IsKeyPressed(Key::Q))
+			if (Input::IsKeyPressed(Key::Q))
 				m_CameraRotation -= m_CameraRotationSpeed * tsSeconds;
-			if (input.IsKeyPressed(Key::E))
+			if (Input::IsKeyPressed(Key::E))
 				m_CameraRotation += m_CameraRotationSpeed * tsSeconds;
 
 			if (m_CameraRotation > 180.0f)

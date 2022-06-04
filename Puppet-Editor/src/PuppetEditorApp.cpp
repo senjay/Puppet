@@ -1,5 +1,4 @@
 #include <Puppet.h>
-#include <imgui.h>
 #include <Puppet/Core/EntryPoint.h>
 #include "EditorLayer.h"
 namespace Puppet{
