@@ -14,12 +14,6 @@ namespace Puppet {
 	{
 		PP_CORE_ERROR("glfw error ({0}): {1}", error_code, description);
 	}
-	// step 1
-	Scope<Window> Window::Create(const WindowProps& props)
-	{
-		return CreateScope<WindowsWindow>(props);
-	}
-
 	// step 2
 	WindowsWindow::WindowsWindow(const WindowProps& props)
 	{

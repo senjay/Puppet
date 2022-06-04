@@ -8,13 +8,13 @@
 namespace Puppet {
 
 	Application* Application::s_Instance = nullptr;
-	Application::Application()
+	Application::Application(const std::string& name)
 	{
 		PP_PROFILE_FUNCTION();
 
 		PP_CORE_ASSERT(!s_Instance, "Application Instance is exits");
 		s_Instance = this;
-		m_Window = Scope<Window>(Window::Create());
+		m_Window = Scope<Window>(Window::Create(WindowProps(name)));
 		m_Window->SetEventCallback(PP_BIND_EVENT_FN(Application::OnEvent));
 		m_Window->SetVSync(false);
 		

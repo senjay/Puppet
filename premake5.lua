@@ -1,6 +1,6 @@
 workspace "Puppet"
 	architecture "x64"
-	startproject "Sandbox"
+	startproject "Puppet-Editor"
 	configurations
 	{
 		"Debug",
@@ -89,6 +89,54 @@ project "Puppet"
 
 project "Sandbox"
 	location "Sandbox"
+	language "C++"
+	cppdialect "C++17"
+	kind "ConsoleApp"
+	staticruntime "off"
+
+	targetdir("bin/".. outputdir .."/%{prj.name}")
+	objdir("bin-int/".. outputdir .."/%{prj.name}")
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+	includedirs
+	{
+		"Puppet/vendor/spdlog/include",
+		"Puppet/src",
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.ImGui}",
+	}
+	links
+	{
+		"Puppet"
+	}
+
+	filter "system:windows"
+		systemversion "latest"
+		defines 
+		{
+			"PP_PLATFORM_WINDOWS",
+		}
+
+	filter "configurations:Debug"
+		runtime "Debug"
+		defines "PP_DEBUG"
+		symbols "on"
+
+	filter "configurations:Release"
+		runtime "Release"
+		defines "PP_Release"
+		optimize "on"
+
+	filter "configurations:Dist"
+		runtime "Release"
+		defines "PP_Dist"
+		optimize "on"
+
+project "Puppet-Editor"
+	location "Puppet-Editor"
 	language "C++"
 	cppdialect "C++17"
 	kind "ConsoleApp"

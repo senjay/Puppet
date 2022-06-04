@@ -202,7 +202,7 @@ namespace Puppet {
 	}
 }
 
-#define PP_PROFILE 1
+#define PP_PROFILE 0
 #if PP_PROFILE
 // Resolve which function signature macro will be used. Note that this only
 // is resolved when the (pre)compiler starts, so the syntax highlighting
