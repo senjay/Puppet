@@ -1,5 +1,5 @@
 workspace "Puppet"
-	architecture "x64"
+	architecture "x86_64"
 	startproject "Puppet-Editor"
 	configurations
 	{
