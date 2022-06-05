@@ -61,6 +61,15 @@ namespace Puppet {
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 	}
+	void ImGuiLayer::OnEvent(Event& event)
+	{
+		if (m_BlockEvents)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			event.m_Handled |= event.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
+			event.m_Handled |= event.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+		}
+	}
 	void ImGuiLayer::Begin()
 	{
 		PP_PROFILE_FUNCTION();

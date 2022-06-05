@@ -34,7 +34,8 @@ namespace Puppet {
 		PP_TRACE("Delta time: {0}s ,{1}ms", ts.GetSeconds(), ts.GetMillseconds());
 		float tsSec = ts.GetSeconds();
 		m_FPS = static_cast<int>(1.0 / tsSec);
-		m_CameraController->OnUpdate(ts);
+		if(m_ViewportFocused)
+			m_CameraController->OnUpdate(ts);
 
 		{
 			PP_PROFILE_SCOPE("Renderer Prep");
@@ -141,6 +142,10 @@ namespace Puppet {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		ImGui::Begin("ViewPort");
+		m_ViewportFocused = ImGui::IsWindowFocused();
+		m_ViewportHovered = ImGui::IsWindowHovered();
+		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused && !m_ViewportHovered);
+
 		ImVec2 viewportPanelSize=ImGui::GetContentRegionAvail();
 		if (m_ViewportSize.x != viewportPanelSize.x || m_ViewportSize.y != viewportPanelSize.y)
 		{

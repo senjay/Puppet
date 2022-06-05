@@ -22,6 +22,7 @@ namespace Puppet {
 			void OnEvent(Event& e);
 			void PushLayer(Layer* layer);
 			void PushOverlay(Layer* layer);
+			ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; };
 	private:
 			bool OnWindowClose(WindowCloseEvent& e);
 			bool OnWindowResize(WindowResizeEvent& e);
