@@ -7,6 +7,9 @@
 #include "Puppet/Core/Layer.h"
 #include "Puppet/ImGui/ImGuiLayer.h"
 
+#include "Puppet/Scene/Components.h"
+#include "Puppet/Scene/Scene.h"
+
 #include "Puppet/Core/KeyCodes.h"
 #include "Puppet/Core/MouseCodes.h"
 #include "Puppet/Core/Input.h"

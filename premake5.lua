@@ -14,6 +14,7 @@ IncludeDir["Glad"] = "Puppet/vendor/Glad/include"
 IncludeDir["ImGui"] = "Puppet/vendor/imgui"
 IncludeDir["glm"] = "Puppet/vendor/glm"
 IncludeDir["stb_image"] = "Puppet/vendor/stb_image"
+IncludeDir["entt"] = "Puppet/vendor/entt/include"
 
 group "Dependencies"
 	include "Puppet/vendor/GLFW"
@@ -52,6 +53,7 @@ project "Puppet"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.entt}",
 	}
 	links
 	{
@@ -107,6 +109,7 @@ project "Sandbox"
 		"Puppet/src",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.entt}",
 	}
 	links
 	{
@@ -155,6 +158,7 @@ project "Puppet-Editor"
 		"Puppet/src",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.entt}",
 	}
 	links
 	{
