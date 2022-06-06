@@ -27,7 +27,7 @@ namespace Puppet {
 
 	#define EVENT_CLASS_CATEGORY(category) virtual int GetCategoryFlags() const override { return category; }
 
-	class PUPPET_API Event
+	class Event
 	{
 		public:
 			virtual ~Event() = default;
@@ -46,8 +46,6 @@ namespace Puppet {
 
 	class EventDispatcher
 	{
-		template<typename T>
-		using EventFn=std::function<bool(T&)>;
 	public:
 		EventDispatcher(Event& event)
 			: m_Event(event)
@@ -55,8 +53,8 @@ namespace Puppet {
 		}
 
 
-		template<typename T>
-		bool Dispatch(EventFn<T> func)
+		template<typename T, typename F>
+		bool Dispatch(const F& func)
 		{	
 			if (m_Event.m_Handled)
 				return false;

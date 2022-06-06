@@ -3,7 +3,7 @@
 namespace Puppet {
 
 	template<typename Derived >
-	class PUPPET_API CoreSingleton 
+	class CoreSingleton 
 	{
 	protected:
 		CoreSingleton() = default;

@@ -20,7 +20,7 @@ namespace Puppet {
 	};
 
 	// 定义窗口基类
-	class PUPPET_API Window
+	class Window
 	{
 	public:
 		// 窗口事件回调函数类型
