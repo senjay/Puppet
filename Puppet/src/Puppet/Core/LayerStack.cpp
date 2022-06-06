@@ -32,7 +32,7 @@ namespace Puppet {
 	void LayerStack::PopLayer(Layer* layer)
 	{
 		// 销毁一个层，操作迭代器，优化效率
-		auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
+		auto it = std::find(m_Layers.begin(), m_Layers.begin()+ m_LayerInsertIndex, layer);
 		if (it != m_Layers.end())
 		{
 			layer->OnDetach();
@@ -43,7 +43,7 @@ namespace Puppet {
 
 	void LayerStack::PopOverlay(Layer* overlay)
 	{
-		auto it = std::find(m_Layers.begin(), m_Layers.end(), overlay);
+		auto it = std::find(m_Layers.begin()+ m_LayerInsertIndex, m_Layers.end(), overlay);
 		if (it != m_Layers.end())
 		{
 			m_Layers.erase(it);
