@@ -9,6 +9,7 @@
 
 #include "Puppet/Scene/Components.h"
 #include "Puppet/Scene/Entity.h"
+#include "Puppet/Scene/ScriptableEntity.h"
 #include "Puppet/Scene/Scene.h"
 
 #include "Puppet/Core/KeyCodes.h"

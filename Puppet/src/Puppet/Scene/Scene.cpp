@@ -9,12 +9,12 @@ namespace Puppet {
 
     Scene::Scene()
     {
-        m_Registry.create();
+
     }
 
     Scene::~Scene()
     {
-
+                
     }
 
     Entity Scene::CreateEntity(const std::string& name)
@@ -43,8 +43,24 @@ namespace Puppet {
         }
     }
 
-    void Scene::OnUpdate(TimeStep st)
+    void Scene::OnUpdate(TimeStep ts)
     {
+        // Update scripts
+        {
+            m_Registry.view<NativeScriptComponent>().each([this,&ts](auto entity, auto& nsc)
+                {
+                    // TODO: Move to Scene::OnScenePlay
+                    if (!nsc.Instance)
+                    {
+                        nsc.Instance = nsc.InstantiateScript();//实例化脚本
+                        nsc.Instance->m_Entity = Entity{ entity, this };
+                        nsc.Instance->OnCreate();//调用脚本
+                    }
+
+                    nsc.Instance->OnUpdate(ts);//调用脚本
+                });
+        }
+
         Camera* mainCamera = nullptr;
         glm::mat4 cameraTransform;
         {
@@ -69,12 +85,17 @@ namespace Puppet {
             auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
             for (auto entity : group)
             {
-                auto& [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+                auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
                 Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
             }
 
             Renderer2D::EndScene();
         }
+    }
+
+    void Scene::DestroyEntity(Entity entity)
+    {
+        m_Registry.destroy((entt::entity)entity);
     }
 
 }

@@ -13,7 +13,8 @@ namespace Puppet {
 		~Scene();
 		Entity CreateEntity(const std::string& name = std::string());
 		void OnViewportResize(uint32_t width, uint32_t height);
-		void OnUpdate(TimeStep st);
+		void OnUpdate(TimeStep ts);
+		void DestroyEntity(Entity entity);
 	private:
 		entt::registry m_Registry;
 		uint32_t m_ViewportWidth,m_ViewportHeight;

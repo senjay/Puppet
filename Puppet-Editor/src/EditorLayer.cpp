@@ -22,10 +22,45 @@ namespace Puppet {
 		m_SquareEntity=m_ActiveScene->CreateEntity("Square");
 		m_SquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0,1.0,0.0,1.0 });
 
-		m_CameraEntity = m_ActiveScene->CreateEntity("SceneCamera Entity");
-		m_CameraEntity.AddComponent<CameraComponent>();
 		//m_CameraEntity.GetComponent<CameraComponent>().Camera.SetViewportSize(1280, 720);
 		//m_CameraEntity.GetComponent<CameraComponent>().Camera.SetOrthographic(16.0/9.0, -1, 1);
+#if 1
+// Entity
+		m_CameraEntity = m_ActiveScene->CreateEntity("SceneCamera Entity");
+		m_CameraEntity.AddComponent<CameraComponent>();
+		class CameraController : public ScriptableEntity
+		{
+		public:
+			virtual void OnCreate() override
+			{
+				auto& translation = GetComponent<TransformComponent>().Translation;
+				//translation.x = rand() % 10 - 5.0f;
+			}
+
+			virtual void OnDestroy() override
+			{
+			}
+
+			virtual void OnUpdate(TimeStep ts) override
+			{
+				auto& translation = GetComponent<TransformComponent>().Translation;
+
+				float speed = 5.0f;
+
+				if (Input::IsKeyPressed(Key::A))
+					translation.x -= speed * ts;
+				if (Input::IsKeyPressed(Key::D))
+					translation.x += speed * ts;
+				if (Input::IsKeyPressed(Key::W))
+					translation.y += speed * ts;
+				if (Input::IsKeyPressed(Key::S))
+					translation.y -= speed * ts;
+			}
+		};
+
+		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+#endif
+
 	}
 
 	void EditorLayer::OnDetach()
@@ -144,6 +179,7 @@ namespace Puppet {
 		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
 		ImGui::Separator();
+		ImGui::DragFloat3("camera Transform", glm::value_ptr(m_CameraEntity.GetComponent<TransformComponent>().Translation));
 		ImGui::Text("%s", m_SquareEntity.GetComponent<TagComponent>().Tag.c_str());
 		auto& squareColor = m_SquareEntity.GetComponent<SpriteRendererComponent>().Color;
 		ImGui::ColorEdit4("Quad Color", glm::value_ptr(squareColor));
