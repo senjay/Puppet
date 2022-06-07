@@ -106,6 +106,16 @@ namespace Puppet {
 
 		delete[] s_Data.QuadVertexBufferBase;
 	}
+	void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform)
+	{
+		PP_PROFILE_FUNCTION();
+
+		s_Data.TextureShader->Bind();
+		glm::mat4 ViewProjection = camera.GetProjection() * glm::inverse(transform);
+		s_Data.TextureShader->SetMat4("u_ViewProjection", ViewProjection);
+
+		StartBatch();
+	}
 	void Renderer2D::BeginScene(OrthographicCamera& camera)
 	{
 		PP_PROFILE_FUNCTION();

@@ -5,7 +5,7 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "Puppet/Renderer/Texture.h"
-
+#include "Puppet/Scene/SceneCamera.h"
 namespace Puppet {
 
 	struct TagComponent
@@ -53,7 +53,7 @@ namespace Puppet {
 
 	struct CameraComponent
 	{
-		//SceneCamera Camera;
+		SceneCamera Camera;
 		bool Primary = true; // TODO: think about moving to Scene
 		bool FixedAspectRatio = false;
 

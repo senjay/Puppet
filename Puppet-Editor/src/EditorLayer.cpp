@@ -22,7 +22,10 @@ namespace Puppet {
 		m_SquareEntity=m_ActiveScene->CreateEntity("Square");
 		m_SquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0,1.0,0.0,1.0 });
 
-
+		m_CameraEntity = m_ActiveScene->CreateEntity("SceneCamera Entity");
+		m_CameraEntity.AddComponent<CameraComponent>();
+		//m_CameraEntity.GetComponent<CameraComponent>().Camera.SetViewportSize(1280, 720);
+		//m_CameraEntity.GetComponent<CameraComponent>().Camera.SetOrthographic(16.0/9.0, -1, 1);
 	}
 
 	void EditorLayer::OnDetach()
@@ -35,6 +38,15 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
+		if (FramebufferSpecification spec = m_Framebuffer->GetSpecification();
+			m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && // zero sized framebuffer is invalid
+			(spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
+		{
+			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_CameraController->OnResize(m_ViewportSize.x, m_ViewportSize.y);
+			//m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		}
 
 		Renderer2D::ResetStats();
 		PP_TRACE("Delta time: {0}s ,{1}ms", ts.GetSeconds(), ts.GetMillseconds());
@@ -51,12 +63,10 @@ namespace Puppet {
 		}
 		{
 			PP_PROFILE_SCOPE("Renderer Draw");
-			Renderer2D::BeginScene(m_CameraController->GetCamera());
 			
 			//update Scene
 			m_ActiveScene->OnUpdate(ts);
 
-			Renderer2D::EndScene();
 			m_Framebuffer->Unbind();
 		}
 	}
@@ -148,12 +158,7 @@ namespace Puppet {
 		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused && !m_ViewportHovered);
 
 		ImVec2 viewportPanelSize=ImGui::GetContentRegionAvail();
-		if (m_ViewportSize.x != viewportPanelSize.x || m_ViewportSize.y != viewportPanelSize.y)
-		{
-			m_ViewportSize = { viewportPanelSize.x,viewportPanelSize.y };
-			m_Framebuffer->Resize(m_ViewportSize.x, m_ViewportSize.y);
-			m_CameraController->OnResize(m_ViewportSize.x, m_ViewportSize.y);
-		}
+		m_ViewportSize = { viewportPanelSize.x,viewportPanelSize.y };
 		PP_WARN("viewportPanelSize:{0} {1}", viewportPanelSize.x, viewportPanelSize.y);
 		uint32_t textureid = m_Framebuffer->GetColorAttachmentRendererID();
 		ImGui::Image((void*)textureid, ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
