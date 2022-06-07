@@ -1,5 +1,5 @@
 #pragma once
-#include "Puppet/Core/Core.h"
+#include "Puppet/Core/Base.h"
 #include<string>
 #include<functional>
 #include<iostream>

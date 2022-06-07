@@ -1,6 +1,6 @@
 // Window.h
 #pragma once
-#include "Puppet/Core/Core.h"
+#include "Puppet/Core/Base.h"
 #include "Puppet/Events/Event.h"
 
 namespace Puppet {

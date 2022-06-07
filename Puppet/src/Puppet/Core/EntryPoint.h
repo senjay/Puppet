@@ -1,5 +1,5 @@
 #pragma once
-#include "Puppet/Core/Core.h"
+#include "Puppet/Core/Base.h"
 #include "Puppet/Core/Application.h"
 #ifdef  PP_PLATFORM_WINDOWS
 

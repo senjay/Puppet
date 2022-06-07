@@ -1,7 +1,7 @@
 #pragma once
 #include "Puppet/Debug/Instrumentor.h"
 
-#include "Puppet/Core/Core.h"
+#include "Puppet/Core/Base.h"
 #include "Puppet/Core/TimeStep.h"
 #include "Puppet/Core/Application.h"
 #include "Puppet/Core/Layer.h"
