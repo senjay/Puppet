@@ -60,7 +60,7 @@ namespace Puppet {
 
 		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 #endif
-
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 
 	void EditorLayer::OnDetach()
@@ -84,7 +84,6 @@ namespace Puppet {
 		}
 
 		Renderer2D::ResetStats();
-		PP_TRACE("Delta time: {0}s ,{1}ms", ts.GetSeconds(), ts.GetMillseconds());
 		float tsSec = ts.GetSeconds();
 		m_FPS = static_cast<int>(1.0 / tsSec);
 		if(m_ViewportFocused)
@@ -168,6 +167,9 @@ namespace Puppet {
 			ImGui::EndMenuBar();
 		}
 
+		m_SceneHierarchyPanel.OnImGuiRender();
+		m_ContentBrowserPanel.OnImGuiRender();
+
 		ImGui::Begin("Puppet Editor");
 		ImGui::Text("Puppet in Example Layer\n");
 		ImGui::Text("FPS: %d\n", m_FPS);
@@ -177,14 +179,6 @@ namespace Puppet {
 		ImGui::Text("Quads: %d", stats.QuadCount);
 		ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
-
-		ImGui::Separator();
-		ImGui::DragFloat3("camera Transform", glm::value_ptr(m_CameraEntity.GetComponent<TransformComponent>().Translation));
-		ImGui::Text("%s", m_SquareEntity.GetComponent<TagComponent>().Tag.c_str());
-		auto& squareColor = m_SquareEntity.GetComponent<SpriteRendererComponent>().Color;
-		ImGui::ColorEdit4("Quad Color", glm::value_ptr(squareColor));
-		ImGui::Separator();
-
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
@@ -195,7 +189,6 @@ namespace Puppet {
 
 		ImVec2 viewportPanelSize=ImGui::GetContentRegionAvail();
 		m_ViewportSize = { viewportPanelSize.x,viewportPanelSize.y };
-		PP_WARN("viewportPanelSize:{0} {1}", viewportPanelSize.x, viewportPanelSize.y);
 		uint32_t textureid = m_Framebuffer->GetColorAttachmentRendererID();
 		ImGui::Image((void*)textureid, ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();

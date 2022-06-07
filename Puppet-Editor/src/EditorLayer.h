@@ -3,7 +3,9 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <Puppet.h>
-#include "imgui.h"
+#include <imgui.h>
+#include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ContentBrowserPanel.h"
 namespace Puppet
 {
 	class EditorLayer :public Layer
@@ -29,7 +31,9 @@ namespace Puppet
 		Ref<Scene>m_ActiveScene;
 		Entity m_SquareEntity;
 		Entity m_CameraEntity;
-
+		SceneHierarchyPanel m_SceneHierarchyPanel;
+		ContentBrowserPanel m_ContentBrowserPanel;
+		
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize{ 0,0 };
 		int m_FPS;
