@@ -10,3 +10,6 @@
 [submodule "Puppet/vendor/glm"]
 	path = Puppet/vendor/glm
 	url = https://github.com/g-truc/glm.git
+[submodule "Puppet/vendor/yaml-cpp"]
+	path = Puppet/vendor/yaml-cpp
+	url = https://github.com/TheCherno/yaml-cpp.git
