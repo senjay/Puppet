@@ -19,9 +19,10 @@ namespace Puppet {
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
 		m_ActiveScene = CreateRef<Scene>();
-		m_SquareEntity=m_ActiveScene->CreateEntity("Square");
+		m_SquareEntity=m_ActiveScene->CreateEntity("Blue Square");
 		m_SquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0,1.0,0.0,1.0 });
-
+		auto& RedEntity = m_ActiveScene->CreateEntity("Red Square");
+		RedEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0,0.0,0.0,1.0 });
 		//m_CameraEntity.GetComponent<CameraComponent>().Camera.SetViewportSize(1280, 720);
 		//m_CameraEntity.GetComponent<CameraComponent>().Camera.SetOrthographic(16.0/9.0, -1, 1);
 #if 1
@@ -146,12 +147,16 @@ namespace Puppet {
 
 		// DockSpace
 		ImGuiIO& io = ImGui::GetIO();
+		ImGuiStyle& style = ImGui::GetStyle();
+		float minWinSizeX = style.WindowMinSize.x;
+		style.WindowMinSize.x = 370.0f;
 		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
 			ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 		}
-
+		style.WindowMinSize.x = minWinSizeX;
+		
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -166,6 +171,8 @@ namespace Puppet {
 
 			ImGui::EndMenuBar();
 		}
+		static bool show = true;
+		ImGui::ShowDemoWindow(&show);
 
 		m_SceneHierarchyPanel.OnImGuiRender();
 		m_ContentBrowserPanel.OnImGuiRender();
@@ -194,7 +201,7 @@ namespace Puppet {
 		ImGui::End();
 		ImGui::PopStyleVar();
 
-		ImGui::End();
+		ImGui::End();	
 	}
 
 	void EditorLayer::OnEvent(Event& event)
