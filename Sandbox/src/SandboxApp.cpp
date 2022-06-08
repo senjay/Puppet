@@ -4,7 +4,7 @@
 #include <glm/ext/matrix_clip_space.hpp> // glm::perspective
 #include <glm/ext/scalar_constants.hpp> // glm::pi
 #include <glm/gtc/type_ptr.hpp>
-#include <imgui.h>
+#include <imgui/imgui.h>
 #include <Puppet/Core/EntryPoint.h>
 #include "ExampleLayer.h"
 #include "Sandbox2D.h"

@@ -1,5 +1,5 @@
 #include "ContentBrowserPanel.h"
-#include <imgui.h>
+#include <imgui/imgui.h>
 namespace Puppet {
 
 	// Once we have projects, change this

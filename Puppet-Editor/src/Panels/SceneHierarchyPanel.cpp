@@ -1,7 +1,7 @@
 #include "SceneHierarchyPanel.h"
 #include <filesystem>
-#include <imgui.h>
-#include <imgui_internal.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "Puppet/Scene/Components.h"
 namespace Puppet {
