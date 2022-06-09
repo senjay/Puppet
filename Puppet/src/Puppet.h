@@ -11,6 +11,7 @@
 #include "Puppet/Scene/Entity.h"
 #include "Puppet/Scene/ScriptableEntity.h"
 #include "Puppet/Scene/Scene.h"
+#include "Puppet/Scene/SceneSerializer.h"
 
 #include "Puppet/Core/KeyCodes.h"
 #include "Puppet/Core/MouseCodes.h"
@@ -25,6 +26,8 @@
 #include "Puppet/Renderer/Shader.h"
 #include "Puppet/Renderer/Texture.h"
 #include "Puppet/Renderer/VertexArray.h"
+
+#include "Puppet/Utils/PlatformUtils.h"
 
 #include "Puppet/Renderer/OrthographicCameraController.h"
 #include "Puppet/Core/Log.h"
