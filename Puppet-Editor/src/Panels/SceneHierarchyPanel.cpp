@@ -4,6 +4,7 @@
 #include <imgui/imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "Puppet/Scene/Components.h"
+#include "Puppet/Math/MathUtils.h"
 namespace Puppet {
 	extern const std::filesystem::path g_AssetPath;
 
@@ -93,8 +94,9 @@ namespace Puppet {
 		}
 	}
 
-	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
+	static bool DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
 	{
+		bool modified = false;
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
 
@@ -116,12 +118,15 @@ namespace Puppet {
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("X", buttonSize))
+		{
 			values.x = resetValue;
+			modified = true;
+		}
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+		modified |= ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -130,12 +135,15 @@ namespace Puppet {
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("Y", buttonSize))
+		{
 			values.y = resetValue;
+			modified = true;
+		}
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+		modified |= ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -144,12 +152,15 @@ namespace Puppet {
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("Z", buttonSize))
+		{
 			values.z = resetValue;
+			modified = true;
+		}
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+		modified |= ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
 		ImGui::PopItemWidth();
 
 		ImGui::PopStyleVar();
@@ -157,6 +168,7 @@ namespace Puppet {
 		ImGui::Columns(1);
 
 		ImGui::PopID();
+		return modified;
 	}
 
 	template<typename T, typename UIFunction>
@@ -246,13 +258,23 @@ namespace Puppet {
 
 		ImGui::PopItemWidth();
 
-		DrawComponent<TransformComponent>("Transform", entity, [](auto& component)
+		DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component)
 			{
-				DrawVec3Control("Translation", component.Translation);
-				glm::vec3 rotation = glm::degrees(component.Rotation);
-				DrawVec3Control("Rotation", rotation);
-				component.Rotation = glm::radians(rotation);
-				DrawVec3Control("Scale", component.Scale, 1.0f);
+				
+				auto [translation, rotationQuat, scale] = Math::DecomposeTransform(component.Transform);
+				bool updateTransform = false;
+				updateTransform |= DrawVec3Control("Translation", translation);
+				glm::vec3 rotation = glm::degrees(glm::eulerAngles(rotationQuat));
+				updateTransform |= DrawVec3Control("Rotation", rotation);
+				updateTransform |= DrawVec3Control("Scale", scale, 1.0f);
+
+				if (updateTransform)
+				{
+					component.Transform = glm::translate(glm::mat4(1.0f), translation) *
+						glm::toMat4(glm::quat(glm::radians(rotation))) *
+						glm::scale(glm::mat4(1.0f), scale);
+				}
+
 			});
 
 		DrawComponent<CameraComponent>("Camera", entity, [](auto& component)

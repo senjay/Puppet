@@ -1,8 +1,31 @@
 #include "PPpch.h"
 #include "SceneSerializer.h"
 #include "Components.h"
+#include "Puppet/Math/MathUtils.h"
 #include <yaml-cpp/yaml.h>
 namespace YAML {
+
+	template<>
+	struct convert<glm::vec2>
+	{
+		static Node encode(const glm::vec2& rhs)
+		{
+			Node node;
+			node.push_back(rhs.x);
+			node.push_back(rhs.y);
+			return node;
+		}
+
+		static bool decode(const Node& node, glm::vec2& rhs)
+		{
+			if (!node.IsSequence() || node.size() != 2)
+				return false;
+
+			rhs.x = node[0].as<float>();
+			rhs.y = node[1].as<float>();
+			return true;
+		}
+	};
 
 	template<>
 	struct convert<glm::vec3>
@@ -56,8 +79,42 @@ namespace YAML {
 		}
 	};
 
+	template<>
+	struct convert<glm::quat>
+	{
+		static Node encode(const glm::quat& rhs)
+		{
+			Node node;
+			node.push_back(rhs.w);
+			node.push_back(rhs.x);
+			node.push_back(rhs.y);
+			node.push_back(rhs.z);
+			node.SetStyle(EmitterStyle::Flow);
+			return node;
+		}
+
+		static bool decode(const Node& node, glm::quat& rhs)
+		{
+			if (!node.IsSequence() || node.size() != 4)
+				return false;
+
+			rhs.w = node[0].as<float>();
+			rhs.x = node[1].as<float>();
+			rhs.y = node[2].as<float>();
+			rhs.z = node[3].as<float>();
+			return true;
+		}
+	};
 }
+
 namespace Puppet {
+	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v)
+	{
+		out << YAML::Flow;
+		out << YAML::BeginSeq << v.x << v.y << YAML::EndSeq;
+		return out;
+	}
+
 	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec3& v)
 	{
 		out << YAML::Flow;
@@ -69,6 +126,13 @@ namespace Puppet {
 	{
 		out << YAML::Flow;
 		out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
+		return out;
+	}
+
+	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::quat& v)
+	{
+		out << YAML::Flow;
+		out << YAML::BeginSeq << v.w << v.x << v.y << v.z << YAML::EndSeq;
 		return out;
 	}
 	static void SerializeEntity(YAML::Emitter& out, Entity entity)
@@ -91,11 +155,11 @@ namespace Puppet {
 		{
 			out << YAML::Key << "TransformComponent";
 			out << YAML::BeginMap; // TransformComponent
-
-			auto& tc = entity.GetComponent<TransformComponent>();
-			out << YAML::Key << "Translation" << YAML::Value << tc.Translation;
-			out << YAML::Key << "Rotation" << YAML::Value << tc.Rotation;
-			out << YAML::Key << "Scale" << YAML::Value << tc.Scale;
+			const glm::mat4& transform=entity.GetComponent<TransformComponent>().Transform;
+			auto [pos, rot, scale] = Math::DecomposeTransform(transform);
+			out << YAML::Key << "Translation" << YAML::Value << pos;
+			out << YAML::Key << "Rotation" << YAML::Value << glm::degrees(glm::eulerAngles(rot));
+			out << YAML::Key << "Scale" << YAML::Value << scale;
 
 			out << YAML::EndMap; // TransformComponent
 		}
@@ -208,10 +272,14 @@ namespace Puppet {
 				if (transformComponent)
 				{
 					// Entities always have transforms
-					auto& tc = deserializedEntity.GetComponent<TransformComponent>();
-					tc.Translation = transformComponent["Translation"].as<glm::vec3>();
-					tc.Rotation = transformComponent["Rotation"].as<glm::vec3>();
-					tc.Scale = transformComponent["Scale"].as<glm::vec3>();
+					glm::mat4& transform = deserializedEntity.GetComponent<TransformComponent>().Transform;
+					glm::vec3 translation = transformComponent["Translation"].as<glm::vec3>();
+					//glm::quat rotation = transformComponent["Rotation"].as<glm::quat>();
+					glm::vec3 eulerDegrees =transformComponent["Rotation"].as<glm::vec3>();
+					glm::quat quat = glm::quat(glm::radians(eulerDegrees));
+					glm::vec3 scale = transformComponent["Scale"].as<glm::vec3>();
+					transform = glm::translate(glm::mat4(1.0f), translation) *
+						glm::toMat4(quat) * glm::scale(glm::mat4(1.0f), scale);
 				}
 
 				auto cameraComponent = entity["CameraComponent"];

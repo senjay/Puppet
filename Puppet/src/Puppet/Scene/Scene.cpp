@@ -84,7 +84,7 @@ namespace Puppet {
                 if (camera.Primary)
                 {
                     mainCamera = &camera.Camera;
-                    cameraTransform = transform.GetTransform();
+                    cameraTransform = transform.Transform;
                     break;
                 }
             }
@@ -97,8 +97,8 @@ namespace Puppet {
             auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
             for (auto entity : group)
             {
-                auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-                Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
+                auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+                Renderer2D::DrawQuad(transformComponent.Transform, sprite.Color);
             }
 
             Renderer2D::EndScene();

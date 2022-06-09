@@ -28,6 +28,7 @@
 #include "Puppet/Renderer/VertexArray.h"
 
 #include "Puppet/Utils/PlatformUtils.h"
+#include "Puppet/Math/MathUtils.h"
 
 #include "Puppet/Renderer/OrthographicCameraController.h"
 #include "Puppet/Core/Log.h"
