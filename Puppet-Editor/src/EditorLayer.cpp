@@ -1,5 +1,5 @@
 #include "EditorLayer.h"
-
+#include <ImGuizmo/ImGuizmo.h>
 namespace Puppet {
 	EditorLayer::EditorLayer() : Layer("EditorLayer")
 	{
@@ -206,6 +206,41 @@ namespace Puppet {
 		m_ViewportSize = { viewportPanelSize.x,viewportPanelSize.y };
 		uint32_t textureid = m_Framebuffer->GetColorAttachmentRendererID();
 		ImGui::Image((void*)textureid, ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
+
+		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+		if (selectedEntity && m_GizmoType != -1)
+		{
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+			float windowWidth = (float)ImGui::GetWindowWidth();
+			float windowHeight = (float)ImGui::GetWindowHeight();
+			ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+			
+			auto cameraEntity = m_ActiveScene->GetPrimaryCameraEntity();
+			const auto& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
+			const glm::mat4& cameraProjection = camera.GetProjection();
+			auto& cameraTransform = cameraEntity.GetComponent<TransformComponent>().Transform;
+			glm::mat4 cameraView = glm::inverse(cameraTransform);
+			
+			// Entity transform
+			glm::mat4& entityTransform = selectedEntity.GetComponent<TransformComponent>().Transform;
+
+			// Snapping
+			bool snap = Input::IsKeyPressed(Key::LeftControl);
+			float snapValue = 0.5f; // Snap to 0.5m for translation/scale
+			// Snap to 45 degrees for rotation
+			if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+				snapValue = 45.0f;
+
+			float snapValues[3] = { snapValue, snapValue, snapValue };
+			
+			ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
+				(ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(entityTransform),
+				nullptr, snap ? snapValues : nullptr);
+		}
+		
+
+
 		ImGui::End();
 		ImGui::PopStyleVar();
 
@@ -225,7 +260,6 @@ namespace Puppet {
 	{
 		if (e.GetRepeatCount() > 0)
 			return false;
-
 		bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
 		bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
 
@@ -251,6 +285,27 @@ namespace Puppet {
 					SaveScene();
 				break;
 			}
+			case Key::Space:
+			{
+				OpenScene("assets/scenes/test.scene");
+				break;
+			}
+			case Key::Q:
+				if (!ImGuizmo::IsUsing())
+					m_GizmoType = -1;
+				break;
+			case Key::W:
+				if (!ImGuizmo::IsUsing())
+					m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+				break;
+			case Key::E:
+				if (!ImGuizmo::IsUsing())
+					m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+				break;
+			case Key::R:
+				if (!ImGuizmo::IsUsing())
+					m_GizmoType = ImGuizmo::OPERATION::SCALE;
+				break;
 		}
 	}
 

@@ -42,6 +42,8 @@ namespace Puppet
 		ContentBrowserPanel m_ContentBrowserPanel;
 		
 		std::string m_SceneFilePath;
+		
+		int m_GizmoType = -1;
 
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize{ 0,0 };

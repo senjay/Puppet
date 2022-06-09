@@ -18,6 +18,7 @@ project "Puppet-Editor"
         "%{wks.location}/Puppet/vendor",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
+		"%{IncludeDir.ImGuizmo}",
 	}
 	links
 	{

@@ -16,6 +16,7 @@ IncludeDir["glm"] = "%{wks.location}/Puppet/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/Puppet/vendor/stb_image"
 IncludeDir["entt"] = "%{wks.location}/Puppet/vendor/entt/include"
 IncludeDir["yaml_cpp"] = "%{wks.location}/Puppet/vendor/yaml-cpp/include"
+IncludeDir["ImGuizmo"] = "%{wks.location}/Puppet/vendor/ImGuizmo"
 
 group "Dependencies"
 	include "Puppet/vendor/GLFW"
