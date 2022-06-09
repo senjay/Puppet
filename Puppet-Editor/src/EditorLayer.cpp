@@ -18,15 +18,12 @@ namespace Puppet {
 		fbSpec.Height = app.GetWindow().GetHeight();
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
-		m_ActiveScene = CreateRef<Scene>();
-		m_SquareEntity=m_ActiveScene->CreateEntity("Blue Square");
-		m_SquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0,1.0,0.0,1.0 });
+#if 0 // Entity
+		Entity BlueSquareEntity=m_ActiveScene->CreateEntity("Blue Square");
+		BlueSquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0,1.0,0.0,1.0 });
 		auto& RedEntity = m_ActiveScene->CreateEntity("Red Square");
 		RedEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0,0.0,0.0,1.0 });
-		//m_CameraEntity.GetComponent<CameraComponent>().Camera.SetViewportSize(1280, 720);
-		//m_CameraEntity.GetComponent<CameraComponent>().Camera.SetOrthographic(16.0/9.0, -1, 1);
-#if 1
-// Entity
+
 		m_CameraEntity = m_ActiveScene->CreateEntity("SceneCamera Entity");
 		m_CameraEntity.AddComponent<CameraComponent>();
 		class CameraController : public ScriptableEntity
@@ -61,6 +58,7 @@ namespace Puppet {
 
 		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 #endif
+		m_ActiveScene = CreateRef<Scene>();
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 
@@ -164,7 +162,16 @@ namespace Puppet {
 				// Disabling fullscreen would allow the window to be moved to the front of other windows, 
 				// which we can't undo at the moment without finer window depth/z control.
 				//ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
-
+				if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+					NewScene();
+				if (ImGui::MenuItem("Open Scene", "Ctrl+O"))
+					OpenScene();
+				ImGui::Separator();
+				if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+					SaveScene();
+				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
+					SaveSceneAs();
+				ImGui::Separator();
 				if (ImGui::MenuItem("Exit")) Application::Get().Close();
 				ImGui::EndMenu();
 			}
@@ -180,6 +187,7 @@ namespace Puppet {
 		ImGui::Begin("Puppet Editor");
 		ImGui::Text("Puppet in Example Layer\n");
 		ImGui::Text("FPS: %d\n", m_FPS);
+		ImGui::Text("Frame Time: %.2fms\n", 1000.0/ m_FPS);
 		auto stats = Renderer2D::GetStats();
 		ImGui::Text("Renderer2D Stats:");
 		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
@@ -209,6 +217,104 @@ namespace Puppet {
 		PP_PROFILE_FUNCTION();
 
 		m_CameraController->OnEvent(event);
+		EventDispatcher dispatcher(event);
+		dispatcher.Dispatch<KeyPressedEvent>(PP_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+	}
+
+	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
+	{
+		if (e.GetRepeatCount() > 0)
+			return false;
+
+		bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
+		bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
+
+		switch (e.GetKeyCode())
+		{
+			case Key::N:
+			{
+				if (control)
+					NewScene();
+				break;
+			}
+			case Key::O:
+			{
+				if (control)
+					OpenScene();
+				break;
+			}
+			case Key::S:
+			{
+				if (control && shift)
+					SaveSceneAs();
+				else if (control)
+					SaveScene();
+				break;
+			}
+		}
+	}
+
+	void EditorLayer::NewScene()
+	{
+		m_ActiveScene = CreateRef<Scene>();
+		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneFilePath = std::string();
+	}
+
+	void EditorLayer::OpenScene()
+	{
+		std::string filepath = FileDialogs::OpenFile("Puppet Scene (*.scene)\0*.scene\0");
+		if (!filepath.empty())
+			OpenScene(filepath);
+	}
+
+	void EditorLayer::OpenScene(const std::filesystem::path& path)
+	{
+		if (path.extension().string() != ".scene")
+		{
+			PP_CORE_WARN("Could not load {0} - not a scene file", path.filename().string());
+			return;
+		}
+
+		Ref<Scene> newScene = CreateRef<Scene>();
+		SceneSerializer serializer(newScene);
+		m_SceneFilePath = path.string();
+		if (serializer.Deserialize(m_SceneFilePath))
+		{
+			m_ActiveScene = newScene;
+			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		}
+	}
+
+	void EditorLayer::SaveScene()
+	{
+		if (!m_SceneFilePath.empty())
+		{
+			SceneSerializer serializer(m_ActiveScene);
+			serializer.Serialize(m_SceneFilePath);
+			PP_CORE_INFO("Save scene to {0}", m_SceneFilePath);
+		}
+		else
+		{
+			SaveSceneAs();
+		}
+	}
+
+	void EditorLayer::SaveSceneAs()
+	{
+		
+		std::string filepath = FileDialogs::SaveFile("Hazel Scene (*.scene)\0*.scene\0");
+		if (!filepath.empty())
+		{
+			SceneSerializer serializer(m_ActiveScene);
+			serializer.Serialize(filepath);
+			m_SceneFilePath = filepath;
+			PP_CORE_INFO("Save scene to {0}", m_SceneFilePath);
+		}
+		else
+			PP_CORE_WARN("Save scene to {0} failed!", m_SceneFilePath);
 	}
 
 

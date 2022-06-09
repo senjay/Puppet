@@ -23,17 +23,26 @@ namespace Puppet
 
 		virtual void OnEvent(Event& event) override;
 	private:
+		bool OnKeyPressed(KeyPressedEvent& e);
+
+		void NewScene();
+		void OpenScene();
+		void OpenScene(const std::filesystem::path& path);
+		void SaveScene();
+		void SaveSceneAs();
+	private:
 		Scope<ShaderLibrary>m_ShaderLibrary;
 		Ref<OrthographicCameraController>m_CameraController;
 		Ref<Texture2D>m_Texture;
 		Ref<Framebuffer>m_Framebuffer;
-
+		
 		Ref<Scene>m_ActiveScene;
-		Entity m_SquareEntity;
 		Entity m_CameraEntity;
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		ContentBrowserPanel m_ContentBrowserPanel;
 		
+		std::string m_SceneFilePath;
+
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize{ 0,0 };
 		int m_FPS;
