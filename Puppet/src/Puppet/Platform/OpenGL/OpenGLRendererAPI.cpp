@@ -9,6 +9,8 @@ namespace Puppet {
 		//目标色:先绘制的
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_STENCIL_TEST);
 	}
 	void OpenGLRendererAPI::SetClearColor(const glm::vec4& color)
 	{

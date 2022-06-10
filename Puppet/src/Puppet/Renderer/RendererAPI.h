@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include "VertexArray.h"
 namespace Puppet {
+	using RendererID = uint32_t;
 
 	class RendererAPI
 	{
