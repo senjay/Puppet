@@ -1,7 +1,6 @@
 #include "PPpch.h"
 #include "Renderer.h"
 #include "Renderer2D.h"
-#include "OrthographicCamera.h"
 namespace Puppet {
 
 	Renderer::SceneData* Renderer::m_SceneData = new Renderer::SceneData();
@@ -19,9 +18,9 @@ namespace Puppet {
 		RenderCommand::SetViewport(0, 0, width, height);
 	}
 
-	void Renderer::BeginScene(OrthographicCamera& camera)
+	void Renderer::BeginScene(const EditorCamera& camera)
 	{
-		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
+		m_SceneData->ViewProjectionMatrix = camera.GetViewProjection();
 	}
 	void Renderer::EndScene()
 	{

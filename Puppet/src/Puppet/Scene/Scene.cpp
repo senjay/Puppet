@@ -54,8 +54,22 @@ namespace Puppet {
         }
         return {};
     }
+    void Scene::OnRenderEditor(TimeStep ts, const EditorCamera& editorCamera)
+    {
+        Renderer2D::BeginScene(editorCamera);
 
-    void Scene::OnUpdate(TimeStep ts)
+        auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+        for (auto entity : group)
+        {
+            auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+            Renderer2D::DrawQuad(transformComponent.Transform, sprite.Color);
+        }
+
+        Renderer2D::EndScene();
+    }
+
+
+    void Scene::OnRenderRuntime(TimeStep ts)
     {
         // Update scripts
         {

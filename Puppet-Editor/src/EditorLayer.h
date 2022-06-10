@@ -6,6 +6,7 @@
 #include <imgui/imgui.h>
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
+#include "Puppet/Camera/EditorCamera.h"
 namespace Puppet
 {
 	class EditorLayer :public Layer
@@ -32,12 +33,11 @@ namespace Puppet
 		void SaveSceneAs();
 	private:
 		Scope<ShaderLibrary>m_ShaderLibrary;
-		Ref<OrthographicCameraController>m_CameraController;
 		Ref<Texture2D>m_Texture;
 		Ref<Framebuffer>m_Framebuffer;
 		
 		Ref<Scene>m_ActiveScene;
-		Entity m_CameraEntity;
+		EditorCamera m_EditorCamera;
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		ContentBrowserPanel m_ContentBrowserPanel;
 		

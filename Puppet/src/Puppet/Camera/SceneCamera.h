@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Puppet/Renderer/Camera.h"
+#include "Puppet/Camera/Camera.h"
 
 namespace Puppet {
 

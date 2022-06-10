@@ -1,8 +1,6 @@
 #pragma once
 #include "Puppet/Core/Base.h"
-#include<string>
-#include<functional>
-#include<iostream>
+#include <sstream>
 namespace Puppet {
 	enum class EventType
 	{

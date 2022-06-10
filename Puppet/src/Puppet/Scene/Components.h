@@ -5,7 +5,7 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "Puppet/Renderer/Texture.h"
-#include "Puppet/Scene/SceneCamera.h"
+#include "Puppet/Camera/SceneCamera.h"
 #include "ScriptableEntity.h"
 namespace Puppet {
 

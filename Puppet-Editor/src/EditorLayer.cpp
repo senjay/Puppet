@@ -3,7 +3,6 @@
 namespace Puppet {
 	EditorLayer::EditorLayer() : Layer("EditorLayer")
 	{
-		m_CameraController = CreateRef<OrthographicCameraController>(1280.0f / 720, true);
 		m_ShaderLibrary = CreateScope<ShaderLibrary>();
 	}
 
@@ -17,6 +16,8 @@ namespace Puppet {
 		fbSpec.Width = app.GetWindow().GetWidth();
 		fbSpec.Height = app.GetWindow().GetHeight();
 		m_Framebuffer = Framebuffer::Create(fbSpec);
+
+		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
 #if 0 // Entity
 		Entity BlueSquareEntity=m_ActiveScene->CreateEntity("Blue Square");
@@ -77,17 +78,16 @@ namespace Puppet {
 			(spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
 		{
 			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_CameraController->OnResize(m_ViewportSize.x, m_ViewportSize.y);
-			//m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
 
 		Renderer2D::ResetStats();
 		float tsSec = ts.GetSeconds();
 		m_FPS = static_cast<int>(1.0 / tsSec);
-		if(m_ViewportFocused)
-			m_CameraController->OnUpdate(ts);
-		
+
+		m_EditorCamera.OnUpdate(ts);
+
 		{
 			PP_PROFILE_SCOPE("Renderer Prep");
 			m_Framebuffer->Bind();
@@ -98,7 +98,7 @@ namespace Puppet {
 			PP_PROFILE_SCOPE("Renderer Draw");
 			
 			//update Scene
-			m_ActiveScene->OnUpdate(ts);
+			m_ActiveScene->OnRenderEditor(ts,m_EditorCamera);
 
 			m_Framebuffer->Unbind();
 		}
@@ -216,12 +216,10 @@ namespace Puppet {
 			float windowHeight = (float)ImGui::GetWindowHeight();
 			ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
 			
-			auto cameraEntity = m_ActiveScene->GetPrimaryCameraEntity();
-			const auto& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
-			const glm::mat4& cameraProjection = camera.GetProjection();
-			auto& cameraTransform = cameraEntity.GetComponent<TransformComponent>().Transform;
-			glm::mat4 cameraView = glm::inverse(cameraTransform);
-			
+			// Editor camera
+			const glm::mat4& cameraProjection = m_EditorCamera.GetProjection();
+			const glm::mat4& cameraView= m_EditorCamera.GetViewMatrix();
+
 			// Entity transform
 			glm::mat4& entityTransform = selectedEntity.GetComponent<TransformComponent>().Transform;
 
@@ -251,7 +249,8 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		m_CameraController->OnEvent(event);
+		m_EditorCamera.OnEvent(event);
+
 		EventDispatcher dispatcher(event);
 		dispatcher.Dispatch<KeyPressedEvent>(PP_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
 	}

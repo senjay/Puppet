@@ -116,13 +116,13 @@ namespace Puppet {
 
 		StartBatch();
 	}
-	void Renderer2D::BeginScene(OrthographicCamera& camera)
+	void Renderer2D::BeginScene(const EditorCamera& camera)
 	{
 		PP_PROFILE_FUNCTION();
 
 		s_Data.TextureShader->Bind();
-		s_Data.TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
-		
+		s_Data.TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjection());
+
 		StartBatch();
 	}
 	void Renderer2D::EndScene()

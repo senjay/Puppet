@@ -1,6 +1,6 @@
 #pragma once
-#include "OrthographicCamera.h"
-#include "Camera.h"
+#include "Puppet/Camera/Camera.h"
+#include "Puppet/Camera/EditorCamera.h"
 #include "Texture.h"
 namespace Puppet {
 
@@ -10,7 +10,7 @@ namespace Puppet {
 		static void Init();
 		static void Shutdown();
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
-		static void BeginScene(OrthographicCamera& camera);
+		static void BeginScene(const EditorCamera& camera);
 		static void EndScene();
 		static void Flush();
 		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
