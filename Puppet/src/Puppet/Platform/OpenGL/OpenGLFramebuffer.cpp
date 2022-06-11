@@ -72,12 +72,17 @@ namespace Puppet {
 			return false;
 		}
 
-		static GLenum HazelFBTextureFormatToGL(FramebufferTextureFormat format)
+		static GLenum PuppetFBTextureFormatToGL(FramebufferTextureFormat format)
 		{
 			switch (format)
 			{
 			case FramebufferTextureFormat::RGBA8:       return GL_RGBA8;
+			case FramebufferTextureFormat::RGBA16F:       return GL_RGBA16F;
+			case FramebufferTextureFormat::RGBA32F: return GL_RGBA32F;
+			case FramebufferTextureFormat::RG32F:       return GL_RG32F;
 			case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
+			case FramebufferTextureFormat::DEPTH32F:       return GL_DEPTH_COMPONENT32F;
+			case FramebufferTextureFormat::DEPTH24STENCIL8: return GL_DEPTH24_STENCIL8;
 			}
 
 			PP_CORE_ASSERT(false," Unknow FramebufferTextureFormat");
@@ -232,13 +237,13 @@ namespace Puppet {
 
 	}
 
-	//void OpenGLFramebuffer::ClearAttachment(uint32_t attachmentIndex, int value)
-	//{
-	//	PP_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(),"attachmentIndex > m_ColorAttachments.size()");
+	void OpenGLFramebuffer::ClearAttachment(uint32_t attachmentIndex, int value)
+	{
+		PP_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(),"attachmentIndex > m_ColorAttachments.size()");
 
-	//	auto& spec = m_ColorAttachmentSpecifications[attachmentIndex];
-	//	glClearTexImage(m_ColorAttachments[attachmentIndex], 0,
-	//		Utils::HazelFBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);
-	//}
+		auto& spec = m_ColorAttachmentSpecifications[attachmentIndex];
+		glClearTexImage(m_ColorAttachments[attachmentIndex], 0,
+			Utils::PuppetFBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);
+	}
 
 }

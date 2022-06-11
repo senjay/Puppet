@@ -66,6 +66,7 @@ namespace Puppet {
 
 		virtual RendererID GetRendererID() const = 0;
 		virtual RendererID GetColorAttachmentRendererID(int index = 0) const = 0;
+		virtual void ClearAttachment(uint32_t attachmentIndex, int value) = 0;
 		virtual RendererID GetDepthAttachmentRendererID() const = 0;
 
 		virtual const FramebufferSpecification& GetSpecification() const = 0;

@@ -1,6 +1,7 @@
 #pragma once
 #include "Puppet/Camera/Camera.h"
 #include "Puppet/Camera/EditorCamera.h"
+#include "Puppet/Scene/Components.h"
 #include "Texture.h"
 namespace Puppet {
 
@@ -26,6 +27,8 @@ namespace Puppet {
 		static void DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID = -1);
 		static void DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, float tilingFactor = 1.0f, const glm::vec4& tintColor = glm::vec4(1.0f), int entityID = -1);
 		
+		static void DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src, int entityID);
+
 		struct Statistics {
 			uint32_t  DrawCalls = 0;
 			uint32_t  QuadCount = 0;

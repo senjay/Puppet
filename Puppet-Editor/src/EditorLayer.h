@@ -25,6 +25,7 @@ namespace Puppet
 		virtual void OnEvent(Event& event) override;
 	private:
 		bool OnKeyPressed(KeyPressedEvent& e);
+		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
 		void NewScene();
 		void OpenScene();
@@ -39,6 +40,8 @@ namespace Puppet
 
 		Ref<Scene>m_ActiveScene;
 		EditorCamera m_EditorCamera;
+		Entity m_HoveredEntity;
+
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		ContentBrowserPanel m_ContentBrowserPanel;
 		
@@ -48,6 +51,7 @@ namespace Puppet
 
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize{ 0,0 };
+		glm::vec2 m_ViewportBounds[2];
 		int m_FPS;
 	};
 }

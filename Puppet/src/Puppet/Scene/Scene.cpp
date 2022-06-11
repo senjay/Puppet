@@ -62,7 +62,7 @@ namespace Puppet {
         for (auto entity : group)
         {
             auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            Renderer2D::DrawQuad(transformComponent.Transform, sprite.Color);
+            Renderer2D::DrawSprite(transformComponent.Transform, sprite, (int)entity);
         }
 
         Renderer2D::EndScene();

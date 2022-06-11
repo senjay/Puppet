@@ -15,12 +15,12 @@ namespace Puppet {
 		auto& app = Application::Get();
 		fbSpec.Width = app.GetWindow().GetWidth();
 		fbSpec.Height = app.GetWindow().GetHeight();
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::Depth };
-		fbSpec.Samples = 4;
-		m_Framebuffer = Framebuffer::Create(fbSpec);
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8};
+		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::RED_INTEGER,FramebufferTextureFormat::Depth };
 		fbSpec.Samples = 1;
-		m_DrawFramebuffer = Framebuffer::Create(fbSpec);
+		m_Framebuffer = Framebuffer::Create(fbSpec);
+		//fbSpec.Attachments = { FramebufferTextureFormat::RGBA8};
+		//fbSpec.Samples = 1;
+		//m_DrawFramebuffer = Framebuffer::Create(fbSpec);
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
 #if 0 // Entity
@@ -83,7 +83,7 @@ namespace Puppet {
 		{
 			PP_CORE_TRACE("{0} {1}", m_ViewportSize.x, m_ViewportSize.y);
 			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_DrawFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			//m_DrawFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
@@ -99,12 +99,32 @@ namespace Puppet {
 			m_Framebuffer->Bind();
 			RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 			RenderCommand::Clear();
+
+
+			//clear entityId color attachment to -1
+			m_Framebuffer->ClearAttachment(1, -1);
 		}
 		{
 			PP_PROFILE_SCOPE("Renderer Draw");
 			
 			//update Scene
 			m_ActiveScene->OnRenderEditor(ts,m_EditorCamera);
+
+
+			auto [mx, my] = ImGui::GetMousePos();
+			mx -= m_ViewportBounds[0].x;
+			my -= m_ViewportBounds[0].y;
+			glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+			my = viewportSize.y - my;
+			int mouseX = (int)mx;
+			int mouseY = (int)my;
+
+			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
+			{
+				int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
+				m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
+				PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
+			}
 
 			m_Framebuffer->Unbind();
 		}
@@ -200,18 +220,32 @@ namespace Puppet {
 		ImGui::Text("Quads: %d", stats.QuadCount);
 		ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+		std::string name = "None";
+		if (m_HoveredEntity)
+			name = m_HoveredEntity.GetComponent<TagComponent>().Tag;
+		ImGui::Text("Hovered Entity: %s", name.c_str());
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		ImGui::Begin("ViewPort");
+
+		auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+		auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+		auto viewportOffset = ImGui::GetWindowPos();
+		m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+		m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+		
+		ImGui::GetForegroundDrawList()->AddRect(*(ImVec2*)&m_ViewportBounds[0], *(ImVec2*)&m_ViewportBounds[1], IM_COL32(255, 255, 0, 255));
+		
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
 		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused && !m_ViewportHovered);
-
+		
 		ImVec2 viewportPanelSize=ImGui::GetContentRegionAvail();
 		m_ViewportSize = { viewportPanelSize.x,viewportPanelSize.y };
-		m_DrawFramebuffer->CopyFromOther(m_Framebuffer);
-		uint32_t textureid = m_DrawFramebuffer->GetColorAttachmentRendererID(0);
+		//m_DrawFramebuffer->CopyFromOther(m_Framebuffer);
+		//uint32_t textureid = m_DrawFramebuffer->GetColorAttachmentRendererID(0);
+		uint32_t textureid = m_Framebuffer->GetColorAttachmentRendererID(0);
 		ImGui::Image((void*)textureid, ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
 
 		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
@@ -260,6 +294,7 @@ namespace Puppet {
 
 		EventDispatcher dispatcher(event);
 		dispatcher.Dispatch<KeyPressedEvent>(PP_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+		dispatcher.Dispatch<MouseButtonPressedEvent>(PP_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
 	}
 
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
@@ -313,6 +348,16 @@ namespace Puppet {
 					m_GizmoType = ImGuizmo::OPERATION::SCALE;
 				break;
 		}
+	}
+
+	bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+	{
+		if (e.GetMouseButton() == Mouse::ButtonLeft)
+		{
+			if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt))
+				m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+		}
+		return false;
 	}
 
 	void EditorLayer::NewScene()

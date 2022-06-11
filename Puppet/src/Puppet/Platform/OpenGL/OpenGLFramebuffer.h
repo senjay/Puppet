@@ -22,10 +22,10 @@ namespace Puppet
 		virtual uint32_t GetWidth() const override { return m_Specification.Width; }
 		virtual uint32_t GetHeight() const override { return m_Specification.Height; }
 
-		virtual RendererID GetRendererID() const { return m_RendererID; }
-		virtual RendererID GetColorAttachmentRendererID(int index = 0) const { return m_ColorAttachments[index]; }
-		virtual RendererID GetDepthAttachmentRendererID() const { return m_DepthAttachment; }
-
+		virtual RendererID GetRendererID() const override { return m_RendererID; }
+		virtual RendererID GetColorAttachmentRendererID(int index = 0) const override { return m_ColorAttachments[index]; }
+		virtual void ClearAttachment(uint32_t attachmentIndex, int value) override;
+		virtual RendererID GetDepthAttachmentRendererID() const override { return m_DepthAttachment; }
 		virtual const FramebufferSpecification& GetSpecification() const override { return m_Specification; }
 		virtual void CopyFromOther(const Ref<Framebuffer>& readFrambuffer)override;
 	private:
