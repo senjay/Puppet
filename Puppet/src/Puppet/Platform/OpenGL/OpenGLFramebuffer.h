@@ -27,6 +27,7 @@ namespace Puppet
 		virtual RendererID GetDepthAttachmentRendererID() const { return m_DepthAttachment; }
 
 		virtual const FramebufferSpecification& GetSpecification() const override { return m_Specification; }
+		virtual void CopyFromOther(const Ref<Framebuffer>& readFrambuffer)override;
 	private:
 		FramebufferSpecification m_Specification;
 		RendererID m_RendererID = 0;

@@ -35,7 +35,8 @@ namespace Puppet
 		Scope<ShaderLibrary>m_ShaderLibrary;
 		Ref<Texture2D>m_Texture;
 		Ref<Framebuffer>m_Framebuffer;
-		
+		Ref<Framebuffer>m_DrawFramebuffer;
+
 		Ref<Scene>m_ActiveScene;
 		EditorCamera m_EditorCamera;
 		SceneHierarchyPanel m_SceneHierarchyPanel;

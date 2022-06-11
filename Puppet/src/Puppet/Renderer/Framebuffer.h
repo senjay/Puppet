@@ -69,7 +69,9 @@ namespace Puppet {
 		virtual RendererID GetDepthAttachmentRendererID() const = 0;
 
 		virtual const FramebufferSpecification& GetSpecification() const = 0;
-
+		//Temp: copy from rener Framebuffer to suport Multi Samples
+		//TODO: post processing
+		virtual void CopyFromOther(const Ref<Framebuffer>& readFrambuffer)=0;
 		static Ref<Framebuffer> Create(const FramebufferSpecification& spec);
 	};
 

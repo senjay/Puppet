@@ -16,9 +16,11 @@ namespace Puppet {
 		fbSpec.Width = app.GetWindow().GetWidth();
 		fbSpec.Height = app.GetWindow().GetHeight();
 		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::Depth };
-		fbSpec.Samples = 1;
+		fbSpec.Samples = 4;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
-
+		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8};
+		fbSpec.Samples = 1;
+		m_DrawFramebuffer = Framebuffer::Create(fbSpec);
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
 #if 0 // Entity
@@ -81,6 +83,7 @@ namespace Puppet {
 		{
 			PP_CORE_TRACE("{0} {1}", m_ViewportSize.x, m_ViewportSize.y);
 			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_DrawFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
@@ -207,7 +210,8 @@ namespace Puppet {
 
 		ImVec2 viewportPanelSize=ImGui::GetContentRegionAvail();
 		m_ViewportSize = { viewportPanelSize.x,viewportPanelSize.y };
-		uint32_t textureid = m_Framebuffer->GetColorAttachmentRendererID(0);
+		m_DrawFramebuffer->CopyFromOther(m_Framebuffer);
+		uint32_t textureid = m_DrawFramebuffer->GetColorAttachmentRendererID(0);
 		ImGui::Image((void*)textureid, ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
 
 		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();

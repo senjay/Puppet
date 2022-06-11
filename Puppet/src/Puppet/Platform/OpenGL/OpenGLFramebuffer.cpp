@@ -41,16 +41,16 @@ namespace Puppet {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, TextureTarget(multisampled), id, 0);
 		}
 
-		static void AttachDepthTexture(uint32_t id, int samples, GLenum format, GLenum attachmentType, uint32_t width, uint32_t height)
+		static void AttachDepthTexture(uint32_t id, int samples, GLenum internalFormat, GLenum attachmentType, uint32_t width, uint32_t height)
 		{
 			bool multisampled = samples > 1;
 			if (multisampled)
 			{
-				glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_FALSE);
+				glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, width, height, GL_FALSE);
 			}
 			else
 			{
-				glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
+				glTexStorage2D(GL_TEXTURE_2D, 1, internalFormat, width, height);
 
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -141,6 +141,15 @@ namespace Puppet {
 				case FramebufferTextureFormat::RED_INTEGER:
 					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_R32I, GL_RED_INTEGER, m_Specification.Width, m_Specification.Height, i);
 					break;
+				case FramebufferTextureFormat::RGBA16F:
+					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA16F, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
+					break;
+				case FramebufferTextureFormat::RGBA32F:
+					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA32F, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
+					break;
+				case FramebufferTextureFormat::RG32F:
+					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RG32F, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
+					break;
 				}
 			}
 		}
@@ -153,6 +162,9 @@ namespace Puppet {
 			{
 			case FramebufferTextureFormat::DEPTH24STENCIL8:
 				Utils::AttachDepthTexture(m_DepthAttachment, m_Specification.Samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.Width, m_Specification.Height);
+				break;
+			case FramebufferTextureFormat::DEPTH32F:
+				Utils::AttachDepthTexture(m_DepthAttachment, m_Specification.Samples, GL_DEPTH_COMPONENT32F, GL_DEPTH_ATTACHMENT, m_Specification.Width, m_Specification.Height);
 				break;
 			}
 		}
@@ -179,6 +191,15 @@ namespace Puppet {
 		glBindTextureUnit(slot, m_ColorAttachments[attachmentIndex]);
 	}
 
+	void OpenGLFramebuffer::CopyFromOther(const Ref<Framebuffer>& readFrambuffer)
+	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, readFrambuffer->GetRendererID());
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_RendererID);
+		glBlitFramebuffer(0, 0, m_Specification.Width, m_Specification.Height, 0, 0,
+			m_Specification.Width, m_Specification.Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
 	void OpenGLFramebuffer::Bind()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
@@ -192,11 +213,9 @@ namespace Puppet {
 
 	void OpenGLFramebuffer::Resize(uint32_t width, uint32_t height, bool forceRecreate)
 	{	
+		//not Recreate
 		if (!forceRecreate && (m_Specification.Width == width && m_Specification.Height == height))
-		{
-			PP_CORE_WARN("Attempted to rezize framebuffer to {0}, {1}", width, height);
 			return;
-		}
 		m_Specification.Width = width;
 		m_Specification.Height = height;
 		Invalidate();
