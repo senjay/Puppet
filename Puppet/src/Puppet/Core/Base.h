@@ -21,35 +21,26 @@ namespace Puppet {
 }
 
 #ifdef  PP_PLATFORM_WINDOWS
-	#if PP_DYNAMIC_LINK
-		#ifdef  PP_BUILD_DLL
-			#define PUPPET_API __declspec(dllexport)
-		#else
-			#define PUPPET_API __declspec(dllimport)
-		#endif 
-	#else
-		#define PUPPET_API
-	#endif
+#if PP_DYNAMIC_LINK
+#ifdef  PP_BUILD_DLL
+#define PUPPET_API __declspec(dllexport)
 #else
-	#error Only Windows Now
+#define PUPPET_API __declspec(dllimport)
+#endif 
+#else
+#define PUPPET_API
+#endif
+#else
+#error Only Windows Now
 #endif //  PP_PLATFORM_WINDOWS
 
-#ifdef PP_DEBUG
-	#define PP_ENABLE_ASSERTS
-#endif // PP_DEBUG
 
-
-#ifdef PP_ENABLE_ASSERTS
-#define PP_ASSERT(x,...) { if(!(x)){PP_ERROR("Assertion Failed: {0}",__VA_ARGS__);__debugbreak();}}
-#define PP_CORE_ASSERT(x,...) { if(!(x)){PP_CORE_ERROR("Assertion Failed: {0}",__VA_ARGS__);__debugbreak();}}
-#else
-#define PP_ASSERT(...)
-#define PP_CORE_ASSERT(...)
-#endif
-
+#define PP_EXPAND_MACRO(x) x
+#define PP_STRINGIFY_MACRO(x) #x
 
 #define BIT(x) 1<<x
 
 #define PP_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 #include "Puppet/Core/Log.h"
+#include "Puppet/Core/Assert.h"
