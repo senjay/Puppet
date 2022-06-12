@@ -3,6 +3,7 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "RenderCommand.h"
+#include "Puppet/Renderer/UniformBuffer.h"
 #include <glm/ext/matrix_transform.hpp>
 namespace Puppet {
 
@@ -41,6 +42,12 @@ namespace Puppet {
 		
 		Renderer2D::Statistics Stats;
 
+		struct CameraData
+		{
+			glm::mat4 ViewProjection;
+		};
+		CameraData CameraBuffer;
+		Ref<UniformBuffer> CameraUniformBuffer;
 	};
 
 	static Renderer2DData s_Data;
@@ -102,6 +109,8 @@ namespace Puppet {
 		s_Data.QuadVertexPositions[2] = {  0.5f, 0.5f,0.0f,1.0f };
 		s_Data.QuadVertexPositions[3] = { -0.5f, 0.5f,0.0f,1.0f };
 
+		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
+
 	}
 	void Renderer2D::Shutdown()
 	{
@@ -113,9 +122,8 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		s_Data.TextureShader->Bind();
-		glm::mat4 ViewProjection = camera.GetProjection() * glm::inverse(transform);
-		s_Data.TextureShader->SetMat4("u_ViewProjection", ViewProjection);
+		s_Data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
+		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		StartBatch();
 	}
@@ -123,8 +131,8 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		s_Data.TextureShader->Bind();
-		s_Data.TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjection());
+		s_Data.CameraBuffer.ViewProjection = camera.GetViewProjection();
+		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		StartBatch();
 	}

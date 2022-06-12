@@ -18,6 +18,9 @@ bin-int/
 *.userosscache
 *.sln.docstates
 **/FlappyRocket/
+Puppet/vendor/VulkanSDK
+Puppet-Editor/assets/cache
+Scripts/__pycache__
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

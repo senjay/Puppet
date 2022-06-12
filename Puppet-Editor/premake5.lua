@@ -36,7 +36,10 @@ project "Puppet-Editor"
 		runtime "Debug"
 		defines "PP_DEBUG"
 		symbols "on"
-
+		postbuildcommands
+		{
+			"{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\""
+		}
 	filter "configurations:Release"
 		runtime "Release"
 		defines "PP_Release"
