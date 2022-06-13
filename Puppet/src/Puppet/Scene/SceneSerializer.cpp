@@ -250,6 +250,7 @@ namespace Puppet {
 			return false;
 
 		std::string sceneName = data["Scene"].as<std::string>();
+		m_Scene->m_SceneName = sceneName;
 		PP_CORE_TRACE("Deserializing scene '{0}'", sceneName);
 
 		auto entities = data["Entities"];

@@ -1,4 +1,4 @@
-Scene: Untitled
+Scene: TestScene
 Entities:
   - Entity: 1234124312
     TagComponent:

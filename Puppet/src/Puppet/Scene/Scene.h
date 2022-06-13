@@ -22,11 +22,18 @@ namespace Puppet {
 		void OnViewportResize(uint32_t width, uint32_t height);
 
 		Entity GetPrimaryCameraEntity();
+		std::string GetSceneName() { return m_SceneName; }
+		template<typename T>
+		auto GetAllEntitiesWith()
+		{
+			return m_Registry.view<T>();
+		}
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);
 	private:
 		entt::registry m_Registry;
 		uint32_t m_ViewportWidth,m_ViewportHeight;
+		std::string m_SceneName="Untitled";
 	};
 }

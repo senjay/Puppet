@@ -1,5 +1,7 @@
 #include "EditorLayer.h"
 #include <ImGuizmo/ImGuizmo.h>
+#include "Scripts/CameraController.h"
+#include "Scripts/SpriteController.h"
 namespace Puppet {
 	EditorLayer::EditorLayer() : Layer("EditorLayer")
 	{
@@ -11,6 +13,9 @@ namespace Puppet {
 		PP_PROFILE_FUNCTION();
 
 		m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
+		m_IconPlay = Texture2D::Create("./Resources/Icons/PlayButton.png");
+		m_IconStop = Texture2D::Create("./Resources/Icons/StopButton.png");
+
 		FramebufferSpecification fbSpec;
 		auto& app = Application::Get();
 		fbSpec.Width = app.GetWindow().GetWidth();
@@ -22,49 +27,8 @@ namespace Puppet {
 		//fbSpec.Samples = 1;
 		//m_DrawFramebuffer = Framebuffer::Create(fbSpec);
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
-
-#if 0 // Entity
-		Entity BlueSquareEntity=m_ActiveScene->CreateEntity("Blue Square");
-		BlueSquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0,1.0,0.0,1.0 });
-		auto& RedEntity = m_ActiveScene->CreateEntity("Red Square");
-		RedEntity.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0,0.0,0.0,1.0 });
-
-		m_CameraEntity = m_ActiveScene->CreateEntity("SceneCamera Entity");
-		m_CameraEntity.AddComponent<CameraComponent>();
-		class CameraController : public ScriptableEntity
-		{
-		public:
-			virtual void OnCreate() override
-			{
-				auto& translation = GetComponent<TransformComponent>().Translation;
-				//translation.x = rand() % 10 - 5.0f;
-			}
-
-			virtual void OnDestroy() override
-			{
-			}
-
-			virtual void OnUpdate(TimeStep ts) override
-			{
-				auto& translation = GetComponent<TransformComponent>().Translation;
-
-				float speed = 5.0f;
-
-				if (Input::IsKeyPressed(Key::A))
-					translation.x -= speed * ts;
-				if (Input::IsKeyPressed(Key::D))
-					translation.x += speed * ts;
-				if (Input::IsKeyPressed(Key::W))
-					translation.y += speed * ts;
-				if (Input::IsKeyPressed(Key::S))
-					translation.y -= speed * ts;
-			}
-		};
-
-		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-#endif
 		m_ActiveScene = CreateRef<Scene>();
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);	
 	}
 
 	void EditorLayer::OnDetach()
@@ -92,25 +56,31 @@ namespace Puppet {
 		float tsSec = ts.GetSeconds();
 		m_FPS = static_cast<int>(1.0 / tsSec);
 
-		m_EditorCamera.OnUpdate(ts);
+		m_Framebuffer->Bind();
 
+		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
+		RenderCommand::Clear();
+		//clear entityId color attachment to -1
+		m_Framebuffer->ClearAttachment(1, -1);
+
+		switch (m_SceneState)
 		{
-			PP_PROFILE_SCOPE("Renderer Prep");
-			m_Framebuffer->Bind();
-			RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-			RenderCommand::Clear();
+			case SceneState::Edit:
+			{
+				m_EditorCamera.OnUpdate(ts);
 
-
-			//clear entityId color attachment to -1
-			m_Framebuffer->ClearAttachment(1, -1);
+				m_ActiveScene->OnRenderEditor(ts, m_EditorCamera);
+				break;
+			}
+			case SceneState::Play:
+			{
+				m_ActiveScene->OnRenderRuntime(ts);
+				break;
+			}
 		}
+
 		{
-			PP_PROFILE_SCOPE("Renderer Draw");
-			
-			//update Scene
-			m_ActiveScene->OnRenderEditor(ts,m_EditorCamera);
-
-
+			PP_PROFILE_SCOPE("Mouse Pick Read Data");
 			auto [mx, my] = ImGui::GetMousePos();
 			mx -= m_ViewportBounds[0].x;
 			my -= m_ViewportBounds[0].y;
@@ -123,11 +93,11 @@ namespace Puppet {
 			{
 				int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
 				m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
-				PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
+				//PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
 			}
-
-			m_Framebuffer->Unbind();
 		}
+
+		m_Framebuffer->Unbind();
 	}
 
 	void EditorLayer::OnUIRender()
@@ -226,6 +196,8 @@ namespace Puppet {
 		ImGui::Text("Hovered Entity: %s", name.c_str());
 		ImGui::End();
 
+		UI_Toolbar();
+
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		ImGui::Begin("ViewPort");
 
@@ -282,7 +254,7 @@ namespace Puppet {
 
 		ImGui::End();
 		ImGui::PopStyleVar();
-
+		
 		ImGui::End();	
 	}
 
@@ -360,6 +332,16 @@ namespace Puppet {
 		return false;
 	}
 
+	void EditorLayer::OnScenePlay()
+	{
+		m_SceneState = SceneState::Play;
+	}
+
+	void EditorLayer::OnSceneStop()
+	{
+		m_SceneState = SceneState::Edit;
+	}
+
 	void EditorLayer::NewScene()
 	{
 		m_ActiveScene = CreateRef<Scene>();
@@ -391,6 +373,8 @@ namespace Puppet {
 			m_ActiveScene = newScene;
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+			if(m_ActiveScene->GetSceneName()=="TestScene")
+				CreateBindTestScripts();
 		}
 	}
 
@@ -421,6 +405,46 @@ namespace Puppet {
 		}
 		else
 			PP_CORE_WARN("Save scene to {0} failed!", m_SceneFilePath);
+	}
+
+	void EditorLayer::UI_Toolbar()
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		auto& colors = ImGui::GetStyle().Colors;
+		const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+		const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
+
+		ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+		float size = ImGui::GetWindowHeight() - 4.0f;
+		Ref<Texture2D> icon = m_SceneState == SceneState::Edit ? m_IconPlay : m_IconStop;
+		ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+		if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
+		{
+			if (m_SceneState == SceneState::Edit)
+				OnScenePlay();
+			else if (m_SceneState == SceneState::Play)
+				OnSceneStop();
+		}
+		ImGui::PopStyleVar(2);
+		ImGui::PopStyleColor(3);
+		ImGui::End();
+	}
+
+	void EditorLayer::CreateBindTestScripts()
+	{
+		Entity PrimaryCameraEntity =m_ActiveScene->GetPrimaryCameraEntity();
+		PrimaryCameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+		auto view= m_ActiveScene->GetAllEntitiesWith<SpriteRendererComponent>();
+		for (auto entity : view)
+		{
+			Entity spriteEntity= Entity{ entity, m_ActiveScene.get() };
+			spriteEntity.AddComponent<NativeScriptComponent>().Bind<SpriteController>();
+		}
 	}
 
 
