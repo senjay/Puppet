@@ -3,18 +3,18 @@
 namespace Puppet {
 
 	template<typename Derived >
-	class CoreSingleton 
+	class BaseSingleton 
 	{
 	protected:
-		CoreSingleton() = default;
+		BaseSingleton() = default;
 	public:
 		static Derived& getInstance()noexcept(std::is_nothrow_constructible<Derived>::value)
 		{
 			static Derived instance;
 			return instance;
 		}
-		virtual ~CoreSingleton() noexcept = default;
-		CoreSingleton(const CoreSingleton&) = delete;
-		CoreSingleton& operator=(const CoreSingleton&) = delete;
+		virtual ~BaseSingleton() noexcept = default;
+		BaseSingleton(const BaseSingleton&) = delete;
+		BaseSingleton& operator=(const BaseSingleton&) = delete;
 	};
 }
