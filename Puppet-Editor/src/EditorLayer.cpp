@@ -3,6 +3,8 @@
 #include "Scripts/CameraController.h"
 #include "Scripts/SpriteController.h"
 namespace Puppet {
+	extern const std::filesystem::path g_AssetPath;
+
 	EditorLayer::EditorLayer() : Layer("EditorLayer")
 	{
 		m_ShaderLibrary = CreateScope<ShaderLibrary>();
@@ -220,6 +222,19 @@ namespace Puppet {
 		uint32_t textureid = m_Framebuffer->GetColorAttachmentRendererID(0);
 		ImGui::Image((void*)textureid, ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
 
+		//DragSceneFile
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+			{
+				const wchar_t* path = (const wchar_t*)payload->Data;
+				OpenScene(std::filesystem::path(g_AssetPath) / path);
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+
+		//Gizmo
 		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
 		if (selectedEntity && m_GizmoType != -1)
 		{

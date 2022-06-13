@@ -17,7 +17,7 @@ namespace Puppet {
 
 		void Bind(uint32_t slot = 0)const override;
 
-		bool IsLoaded() const override { return true; };
+		bool IsLoaded() const override { return m_IsLoaded; };
 
 		bool operator==(const Texture& other) const override 
 		{ 
@@ -29,6 +29,7 @@ namespace Puppet {
 		uint32_t m_Width, m_Height;
 		uint32_t m_RendererID;
 		GLenum m_InternalFormat, m_DataFormat;
+		bool m_IsLoaded = false;
 	};
 
 }
