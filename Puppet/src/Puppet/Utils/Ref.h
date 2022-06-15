@@ -120,7 +120,7 @@ namespace Puppet {
 
 		T* get() { return  m_Instance; }
 		const T* get() const { return  m_Instance; }
-		
+
 		void Reset(T* instance = nullptr)
 		{
 			DecRef();
