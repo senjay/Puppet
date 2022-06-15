@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 namespace Puppet
 {
-	class Shader
+	class Shader:public RefCounted
 	{
 	public:
 		virtual ~Shader() = default;
@@ -21,7 +21,7 @@ namespace Puppet
 		static Ref<Shader> Create(const std::string& glslpath);
 	};
 
-	class ShaderLibrary
+	class ShaderLibrary :public RefCounted
 	{
 	public:
 		void Add(const std::string& name, const Ref<Shader>& shader);

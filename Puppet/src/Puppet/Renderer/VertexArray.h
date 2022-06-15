@@ -3,7 +3,7 @@
 #include "Puppet/Renderer/Buffer.h"
 namespace Puppet
 {
-	class VertexArray
+	class VertexArray :public RefCounted
 	{
 	public:
 		virtual ~VertexArray() {}

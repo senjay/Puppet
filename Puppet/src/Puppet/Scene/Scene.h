@@ -6,7 +6,8 @@ namespace Puppet {
 
 	class Entity;//forward declaration
 
-	class Scene {
+	class Scene :public RefCounted
+	{
 		friend class Entity;
 		friend class SceneHierarchyPanel;
 		friend class SceneSerializer;

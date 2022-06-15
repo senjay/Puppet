@@ -3,32 +3,12 @@
 #include	<glad/glad.h>
 namespace Puppet {
 
-	static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
-	{
-		switch (type)
-		{
-			case Puppet::ShaderDataType::Float:    return GL_FLOAT;
-			case Puppet::ShaderDataType::Float2:   return GL_FLOAT;
-			case Puppet::ShaderDataType::Float3:   return GL_FLOAT;
-			case Puppet::ShaderDataType::Float4:   return GL_FLOAT;
-			case Puppet::ShaderDataType::Mat3:     return GL_FLOAT;
-			case Puppet::ShaderDataType::Mat4:     return GL_FLOAT;
-			case Puppet::ShaderDataType::Int:      return GL_INT;
-			case Puppet::ShaderDataType::Int2:     return GL_INT;
-			case Puppet::ShaderDataType::Int3:     return GL_INT;
-			case Puppet::ShaderDataType::Int4:     return GL_INT;
-			case Puppet::ShaderDataType::Bool:     return GL_BOOL;
-		}
-		PP_CORE_ASSERT(false, "Unknown ShaderDataType!");
-		return 0;
-	}
-
 	// OpenGL∂•µ„‰÷»æµƒª∫≥Â¿‡
 	class OpenGLVertexBuffer : public VertexBuffer
 	{
 	public:
-		OpenGLVertexBuffer(uint32_t size);
-		OpenGLVertexBuffer(float* vertices, uint32_t size);
+		OpenGLVertexBuffer(uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Dynamic);
+		OpenGLVertexBuffer(void* data, uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Static);
 		virtual ~OpenGLVertexBuffer();
 
 		virtual void Bind() const override;

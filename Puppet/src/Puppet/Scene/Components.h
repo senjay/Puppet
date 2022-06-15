@@ -51,6 +51,8 @@ namespace Puppet {
 
 		CameraComponent() = default;
 		CameraComponent(const CameraComponent&) = default;
+		operator SceneCamera& () { return Camera; }
+		operator const SceneCamera& () const { return Camera; }
 	};
 
 	struct NativeScriptComponent

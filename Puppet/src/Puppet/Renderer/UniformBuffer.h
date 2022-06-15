@@ -2,7 +2,7 @@
 #include "Puppet/Core/Base.h"
 namespace Puppet {
 
-	class UniformBuffer
+	class UniformBuffer :public RefCounted
 	{
 	public:
 		virtual ~UniformBuffer() {}

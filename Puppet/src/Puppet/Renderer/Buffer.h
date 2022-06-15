@@ -103,8 +103,13 @@ namespace Puppet
 		uint32_t m_Stride = 0;
 	};
 
+	enum class VertexBufferUsage
+	{
+		None = 0, Static = 1, Dynamic = 2
+	};
+
 	// ¶¥µãBuffer
-	class VertexBuffer
+	class VertexBuffer:public RefCounted
 	{
 	public:
 		virtual ~VertexBuffer() {}
@@ -115,12 +120,12 @@ namespace Puppet
 		virtual void SetData(const void* data, uint32_t size) = 0;
 		virtual const BufferLayout& GetLayout() const = 0;
 
-		static Ref<VertexBuffer> Create(uint32_t size);
-		static Ref<VertexBuffer> Create(float* vertices, uint32_t size);
+		static Ref<VertexBuffer> Create(void* data, uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Static);
+		static Ref<VertexBuffer> Create(uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Dynamic);
 	};
 
 	// ¶¥µãË÷ÒýBuffer
-	class IndexBuffer
+	class IndexBuffer :public RefCounted
 	{
 	public:
 		virtual ~IndexBuffer() {}

@@ -1,28 +1,35 @@
 #include "PPpch.h"
 #include "OpenGLBuffer.h"
-
+#include "Puppet/Renderer/Renderer.h"
+#include "OpenGLUtils.h"
 #include <glad/glad.h>
 
 namespace Puppet {	
 	//------------------------------------------------------//
 	//-----------------VertexBuffer-------------------------//
 	//------------------------------------------------------//
-	OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size)
+	OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size, VertexBufferUsage usage)
 	{
 		PP_PROFILE_FUNCTION();
 
 		glCreateBuffers(1, &m_RendererID);
 		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
-
+		glBufferData(GL_ARRAY_BUFFER, size, nullptr, OpenGLUtils::OpenGLVBUsage(usage));
+		//Ref<OpenGLVertexBuffer> instance = std::dynamic_pointer_cast<OpenGLVertexBuffer>(shared_from_this());
+		//Renderer::Submit([instance]() mutable
+		//	{
+		//		glCreateBuffers(1, &instance->m_RendererID);
+		//		glNamedBufferData(instance->m_RendererID, instance->m_Size, instance->m_LocalData.Data, OpenGLUsage(instance->m_Usage));
+		//});
 	}
-	OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size)
+
+	OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint32_t size, VertexBufferUsage usage)
 	{
 		PP_PROFILE_FUNCTION();
 
 		glCreateBuffers(1, &m_RendererID);
 		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-		glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, size, data, OpenGLUtils::OpenGLVBUsage(usage));
 	}
 
 	OpenGLVertexBuffer::~OpenGLVertexBuffer()

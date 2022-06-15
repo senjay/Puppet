@@ -1,5 +1,6 @@
 #include "PPpch.h"
 #include "OpenGLVertexArray.h"
+#include "OpenGLUtils.h"
 #include <glad/glad.h>
 namespace Puppet
 {
@@ -55,7 +56,7 @@ namespace Puppet
 				glEnableVertexAttribArray(m_VertexBufferIndex);
 				glVertexAttribPointer(m_VertexBufferIndex,
 					element.GetComponentCount(),
-					ShaderDataTypeToOpenGLBaseType(element.Type),
+					OpenGLUtils::ShaderDataTypeToOpenGLBaseType(element.Type),
 					element.Normalized ? GL_TRUE : GL_FALSE,
 					layout.GetStride(),
 					(const void*)element.Offset);
@@ -71,7 +72,7 @@ namespace Puppet
 				glEnableVertexAttribArray(m_VertexBufferIndex);
 				glVertexAttribIPointer(m_VertexBufferIndex,
 					element.GetComponentCount(),
-					ShaderDataTypeToOpenGLBaseType(element.Type),
+					OpenGLUtils::ShaderDataTypeToOpenGLBaseType(element.Type),
 					layout.GetStride(),
 					(const void*)element.Offset);
 				m_VertexBufferIndex++;
@@ -86,7 +87,7 @@ namespace Puppet
 					glEnableVertexAttribArray(m_VertexBufferIndex);
 					glVertexAttribPointer(m_VertexBufferIndex,
 						count,
-						ShaderDataTypeToOpenGLBaseType(element.Type),
+						OpenGLUtils::ShaderDataTypeToOpenGLBaseType(element.Type),
 						element.Normalized ? GL_TRUE : GL_FALSE,
 						layout.GetStride(),
 						(const void*)(element.Offset + sizeof(float) * count * i));

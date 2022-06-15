@@ -2,7 +2,7 @@
 #include "Puppet/Core/Base.h"
 #include <string>
 namespace Puppet{
-	class Texture
+	class Texture :public RefCounted
 	{
 	public:
 		virtual ~Texture() = default;
