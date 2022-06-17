@@ -22,6 +22,8 @@ namespace Puppet {
 			void OnEvent(Event& e);
 			void PushLayer(Layer* layer);
 			void PushOverlay(Layer* layer);
+			void RenderImGui();
+			void FlushFPS(float deltaTime);
 			ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; };
 	private:
 			bool OnWindowClose(WindowCloseEvent& e);
@@ -37,6 +39,12 @@ namespace Puppet {
 			float m_LastTime=0.0;
 	private:
 		static Application* s_Instance;
+
+	private:
+		float mAvgDuration{ 0.f };
+		int   mFrameCount{ 0 };
+		int   m_FPS{ 0 };
+		static const float s_FPSAlpha;
 	};
 	// To be defined in Client
 	Application* CreateApplication();

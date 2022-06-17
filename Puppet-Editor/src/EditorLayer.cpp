@@ -1,5 +1,6 @@
 #include "EditorLayer.h"
 #include <ImGuizmo/ImGuizmo.h>
+#include "Puppet/Renderer/SceneRenderer.h"
 #include "Scripts/CameraController.h"
 #include "Scripts/SpriteController.h"
 namespace Puppet {
@@ -7,27 +8,16 @@ namespace Puppet {
 
 	EditorLayer::EditorLayer() : Layer("EditorLayer")
 	{
-		m_ShaderLibrary = CreateScope<ShaderLibrary>();
+
 	}
 
 	void EditorLayer::OnAttach()
 	{
 		PP_PROFILE_FUNCTION();
 
-		m_Texture = Texture2D::Create("./assets/textures/Checkerboard.png");
 		m_IconPlay = Texture2D::Create("./Resources/Icons/PlayButton.png");
 		m_IconStop = Texture2D::Create("./Resources/Icons/StopButton.png");
 
-		FramebufferSpecification fbSpec;
-		auto& app = Application::Get();
-		fbSpec.Width = app.GetWindow().GetWidth();
-		fbSpec.Height = app.GetWindow().GetHeight();
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8,FramebufferTextureFormat::RED_INTEGER,FramebufferTextureFormat::Depth };
-		fbSpec.Samples = 1;
-		m_Framebuffer = Framebuffer::Create(fbSpec);
-		//fbSpec.Attachments = { FramebufferTextureFormat::RGBA8};
-		//fbSpec.Samples = 1;
-		//m_DrawFramebuffer = Framebuffer::Create(fbSpec);
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 		m_ActiveScene = CreateRef<Scene>();
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);	
@@ -43,27 +33,10 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		if (FramebufferSpecification spec = m_Framebuffer->GetSpecification();
-			m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && // zero sized framebuffer is invalid
-			(spec.Width != (uint32_t)m_ViewportSize.x || spec.Height != (uint32_t)m_ViewportSize.y))
-		{
-			PP_CORE_TRACE("{0} {1}", m_ViewportSize.x, m_ViewportSize.y);
-			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			//m_DrawFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
-			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-		}
-
 		Renderer2D::ResetStats();
 		float tsSec = ts.GetSeconds();
 		m_FPS = static_cast<int>(1.0 / tsSec);
 
-		m_Framebuffer->Bind();
-
-		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-		RenderCommand::Clear();
-		//clear entityId color attachment to -1
-		m_Framebuffer->ClearAttachment(1, -1);
 
 		switch (m_SceneState)
 		{
@@ -90,16 +63,15 @@ namespace Puppet {
 			my = viewportSize.y - my;
 			int mouseX = (int)mx;
 			int mouseY = (int)my;
-
+			
 			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
 			{
-				int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
-				m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
-				//PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
+				Renderer::WaitAndRender();
+				int pixelData=SceneRenderer::GetFinalRenderPass()->GetSpecification().TargetFramebuffer->ReadPixel(1, mouseX, mouseY);
+				m_HoveredEntity = pixelData ==-1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
+				PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
 			}
 		}
-
-		m_Framebuffer->Unbind();
 	}
 
 	void EditorLayer::OnUIRender()
@@ -217,9 +189,15 @@ namespace Puppet {
 		
 		ImVec2 viewportPanelSize=ImGui::GetContentRegionAvail();
 		m_ViewportSize = { viewportPanelSize.x,viewportPanelSize.y };
-		//m_DrawFramebuffer->CopyFromOther(m_Framebuffer);
-		//uint32_t textureid = m_DrawFramebuffer->GetColorAttachmentRendererID(0);
-		uint32_t textureid = m_Framebuffer->GetColorAttachmentRendererID(0);
+
+
+		//TODO: move to other?
+		SceneRenderer::SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+
+		//show viewport
+		uint32_t textureid = SceneRenderer::GetFinalColorBufferRendererID();
 		ImGui::Image((void*)textureid, ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
 
 		//DragSceneFile

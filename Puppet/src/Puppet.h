@@ -16,13 +16,15 @@
 #include "Puppet/Core/KeyCodes.h"
 #include "Puppet/Core/MouseCodes.h"
 #include "Puppet/Core/Input.h"
+#include "Puppet/Core/Buffer.h"
 
 #include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Renderer/Renderer2D.h"
 #include "Puppet/Renderer/RenderCommand.h"
 
-#include "Puppet/Renderer/Buffer.h"
 #include "Puppet/Renderer/Framebuffer.h"
+#include "Puppet/Renderer/VertexBuffer.h"
+#include "Puppet/Renderer/IndexBuffer.h"
 #include "Puppet/Renderer/Shader.h"
 #include "Puppet/Renderer/Texture.h"
 #include "Puppet/Renderer/VertexArray.h"

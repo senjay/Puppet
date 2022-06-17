@@ -12,6 +12,7 @@ namespace Puppet {
 		return std::make_unique<T>(std::forward<Args>(args)...);
 	}
 
+	using byte = uint8_t;
 }
 
 #ifdef  PP_PLATFORM_WINDOWS

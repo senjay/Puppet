@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
-#include "Puppet/Renderer/Buffer.h"
+#include "Puppet/Renderer/VertexBuffer.h"
+#include "Puppet/Renderer/IndexBuffer.h"
 namespace Puppet
 {
 	class VertexArray :public RefCounted

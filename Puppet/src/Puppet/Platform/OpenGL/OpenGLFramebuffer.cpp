@@ -1,5 +1,6 @@
 #include "PPpch.h"
 #include "OpenGLFramebuffer.h"
+#include "Puppet/Renderer/Renderer.h"
 #include <glad/glad.h>
 namespace Puppet {
 
@@ -67,6 +68,7 @@ namespace Puppet {
 			switch (format)
 			{
 			case FramebufferTextureFormat::DEPTH24STENCIL8:  return true;
+			case FramebufferTextureFormat::DEPTH32F:	 return true;
 			}
 
 			return false;
@@ -107,93 +109,103 @@ namespace Puppet {
 
 	OpenGLFramebuffer::~OpenGLFramebuffer()
 	{
-		glDeleteFramebuffers(1, &m_RendererID);
-		glDeleteTextures(m_ColorAttachments.size(), m_ColorAttachments.data());
-		glDeleteTextures(1, &m_DepthAttachment);
+		Ref<OpenGLFramebuffer> instance = this;
+		Renderer::Submit([instance]()mutable {
+			glDeleteFramebuffers(1, &instance->m_RendererID);
+			glDeleteTextures(instance->m_ColorAttachments.size(), instance->m_ColorAttachments.data());
+			glDeleteTextures(1, &instance->m_DepthAttachment);
+		});
 	}
 
 	void OpenGLFramebuffer::Invalidate()
 	{
-		if (m_RendererID)
-		{
-			glDeleteFramebuffers(1, &m_RendererID);
-			glDeleteTextures(m_ColorAttachments.size(), m_ColorAttachments.data());
-			glDeleteTextures(1, &m_DepthAttachment);
-
-			m_ColorAttachments.clear();
-			m_DepthAttachment = 0;
-		}
-
-		glCreateFramebuffers(1, &m_RendererID);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-
-		bool multisample = m_Specification.Samples > 1;
-
-		// Attachments
-		if (m_ColorAttachmentSpecifications.size())
-		{
-			m_ColorAttachments.resize(m_ColorAttachmentSpecifications.size());
-			Utils::CreateTextures(multisample, m_ColorAttachments.data(), m_ColorAttachments.size());
-
-			for (size_t i = 0; i < m_ColorAttachments.size(); i++)
+		Ref<OpenGLFramebuffer> instance = this;
+		Renderer::Submit([instance]() mutable {
+			if (instance->m_RendererID)
 			{
-				Utils::BindTexture(multisample, m_ColorAttachments[i]);
-				switch (m_ColorAttachmentSpecifications[i].TextureFormat)
+				glDeleteFramebuffers(1, &instance->m_RendererID);
+				glDeleteTextures(instance->m_ColorAttachments.size(), instance->m_ColorAttachments.data());
+				glDeleteTextures(1, &instance->m_DepthAttachment);
+
+				instance->m_ColorAttachments.clear();
+				instance->m_DepthAttachment = 0;
+			}
+
+			glCreateFramebuffers(1, &instance->m_RendererID);
+			glBindFramebuffer(GL_FRAMEBUFFER, instance->m_RendererID);
+
+			bool multisample = instance->m_Specification.Samples > 1;
+
+			// Attachments
+			if (instance->m_ColorAttachmentSpecifications.size())
+			{
+				instance->m_ColorAttachments.resize(instance->m_ColorAttachmentSpecifications.size());
+				Utils::CreateTextures(multisample, instance->m_ColorAttachments.data(), instance->m_ColorAttachments.size());
+
+				for (size_t i = 0; i < instance->m_ColorAttachments.size(); i++)
 				{
-				case FramebufferTextureFormat::RGBA8:
-					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA8, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
+					Utils::BindTexture(multisample, instance->m_ColorAttachments[i]);
+					switch (instance->m_ColorAttachmentSpecifications[i].TextureFormat)
+					{
+					case FramebufferTextureFormat::RGBA8:
+						Utils::AttachColorTexture(instance->m_ColorAttachments[i], instance->m_Specification.Samples, GL_RGBA8, GL_RGBA, instance->m_Specification.Width, instance->m_Specification.Height, i);
+						break;
+					case FramebufferTextureFormat::RED_INTEGER:
+						Utils::AttachColorTexture(instance->m_ColorAttachments[i], instance->m_Specification.Samples, GL_R32I, GL_RED_INTEGER, instance->m_Specification.Width, instance->m_Specification.Height, i);
+						break;
+					case FramebufferTextureFormat::RGBA16F:
+						Utils::AttachColorTexture(instance->m_ColorAttachments[i], instance->m_Specification.Samples, GL_RGBA16F, GL_RGBA, instance->m_Specification.Width, instance->m_Specification.Height, i);
+						break;
+					case FramebufferTextureFormat::RGBA32F:
+						Utils::AttachColorTexture(instance->m_ColorAttachments[i], instance->m_Specification.Samples, GL_RGBA32F, GL_RGBA, instance->m_Specification.Width, instance->m_Specification.Height, i);
+						break;
+					case FramebufferTextureFormat::RG32F:
+						Utils::AttachColorTexture(instance->m_ColorAttachments[i], instance->m_Specification.Samples, GL_RG32F, GL_RGBA, instance->m_Specification.Width, instance->m_Specification.Height, i);
+						break;
+					}
+				}
+			}
+
+			if (instance->m_DepthAttachmentSpecification.TextureFormat != FramebufferTextureFormat::None)
+			{
+				Utils::CreateTextures(multisample, &instance->m_DepthAttachment, 1);
+				Utils::BindTexture(multisample, instance->m_DepthAttachment);
+				switch (instance->m_DepthAttachmentSpecification.TextureFormat)
+				{
+				case FramebufferTextureFormat::DEPTH24STENCIL8:
+					Utils::AttachDepthTexture(instance->m_DepthAttachment, instance->m_Specification.Samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, instance->m_Specification.Width, instance->m_Specification.Height);
 					break;
-				case FramebufferTextureFormat::RED_INTEGER:
-					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_R32I, GL_RED_INTEGER, m_Specification.Width, m_Specification.Height, i);
-					break;
-				case FramebufferTextureFormat::RGBA16F:
-					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA16F, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
-					break;
-				case FramebufferTextureFormat::RGBA32F:
-					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA32F, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
-					break;
-				case FramebufferTextureFormat::RG32F:
-					Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RG32F, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
+				case FramebufferTextureFormat::DEPTH32F:
+					Utils::AttachDepthTexture(instance->m_DepthAttachment, instance->m_Specification.Samples, GL_DEPTH_COMPONENT32F, GL_DEPTH_ATTACHMENT, instance->m_Specification.Width, instance->m_Specification.Height);
 					break;
 				}
 			}
-		}
 
-		if (m_DepthAttachmentSpecification.TextureFormat != FramebufferTextureFormat::None)
-		{
-			Utils::CreateTextures(multisample, &m_DepthAttachment, 1);
-			Utils::BindTexture(multisample, m_DepthAttachment);
-			switch (m_DepthAttachmentSpecification.TextureFormat)
+			if (instance->m_ColorAttachments.size() > 1)
 			{
-			case FramebufferTextureFormat::DEPTH24STENCIL8:
-				Utils::AttachDepthTexture(m_DepthAttachment, m_Specification.Samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.Width, m_Specification.Height);
-				break;
-			case FramebufferTextureFormat::DEPTH32F:
-				Utils::AttachDepthTexture(m_DepthAttachment, m_Specification.Samples, GL_DEPTH_COMPONENT32F, GL_DEPTH_ATTACHMENT, m_Specification.Width, m_Specification.Height);
-				break;
+				PP_CORE_ASSERT(instance->m_ColorAttachments.size() <= 4, "m_ColorAttachments.size() > 4");
+				GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+				glDrawBuffers(instance->m_ColorAttachments.size(), buffers);
 			}
-		}
+			else if (instance->m_ColorAttachments.empty())
+			{
+				// Only depth-pass
+				glDrawBuffer(GL_NONE);
+			}
 
-		if (m_ColorAttachments.size() > 1)
-		{
-			PP_CORE_ASSERT(m_ColorAttachments.size() <= 4,"m_ColorAttachments.size() > 4");
-			GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-			glDrawBuffers(m_ColorAttachments.size(), buffers);
-		}
-		else if (m_ColorAttachments.empty())
-		{
-			// Only depth-pass
-			glDrawBuffer(GL_NONE);
-		}
+			PP_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
 
-		PP_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		});
 	}
 
 	void OpenGLFramebuffer::BindTexture(uint32_t attachmentIndex, uint32_t slot) const
 	{
-		glBindTextureUnit(slot, m_ColorAttachments[attachmentIndex]);
+		Ref<const OpenGLFramebuffer> instance = this;
+		Renderer::Submit([instance, attachmentIndex, slot]() {
+			glBindTextureUnit(slot, instance->m_ColorAttachments[attachmentIndex]);
+		});
 	}
 
 	void OpenGLFramebuffer::CopyFromOther(const Ref<Framebuffer>& readFrambuffer)
@@ -207,13 +219,18 @@ namespace Puppet {
 
 	void OpenGLFramebuffer::Bind()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-		glViewport(0, 0, m_Specification.Width, m_Specification.Height);
+		Ref<const OpenGLFramebuffer> instance = this;
+		Renderer::Submit([instance]() {
+			glBindFramebuffer(GL_FRAMEBUFFER, instance->m_RendererID);
+			glViewport(0, 0, instance->m_Specification.Width, instance->m_Specification.Height);
+		});
 	}
 
 	void OpenGLFramebuffer::Unbind()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		Renderer::Submit([]() {
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		});
 	}
 
 	void OpenGLFramebuffer::Resize(uint32_t width, uint32_t height, bool forceRecreate)
@@ -229,10 +246,11 @@ namespace Puppet {
 	int OpenGLFramebuffer::ReadPixel(uint32_t attachmentIndex, int x, int y)
 	{
 		PP_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(),"attachmentIndex >= m_ColorAttachments.size()");
-
+		glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 		glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
 		int pixelData;
 		glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		return pixelData;
 
 	}
@@ -240,10 +258,13 @@ namespace Puppet {
 	void OpenGLFramebuffer::ClearAttachment(uint32_t attachmentIndex, int value)
 	{
 		PP_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(),"attachmentIndex > m_ColorAttachments.size()");
-
-		auto& spec = m_ColorAttachmentSpecifications[attachmentIndex];
-		glClearTexImage(m_ColorAttachments[attachmentIndex], 0,
-			Utils::PuppetFBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);
+		
+		Ref<OpenGLFramebuffer> instance = this;
+		Renderer::Submit([=]()mutable {
+			auto& spec = instance->m_ColorAttachmentSpecifications[attachmentIndex];
+			glClearTexImage(instance->m_ColorAttachments[attachmentIndex], 0,
+				Utils::PuppetFBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);
+		});	
 	}
 
 }

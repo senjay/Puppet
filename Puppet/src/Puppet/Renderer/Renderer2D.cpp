@@ -3,6 +3,8 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "RenderCommand.h"
+#include "Pipeline.h"
+#include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Renderer/UniformBuffer.h"
 #include <glm/ext/matrix_transform.hpp>
 namespace Puppet {
@@ -24,8 +26,9 @@ namespace Puppet {
 		static const  uint32_t MaxVertices = MaxQuads * 4;
 		static const  uint32_t MaxIndices = MaxQuads * 6;
 		static const uint32_t MaxTextureSlots = 32; // TODO: RenderCaps
-		Ref<VertexArray>QuadVertexArray;
+		Ref<Pipeline> QuadPipeline;
 		Ref<VertexBuffer> QuadVertexBuffer;
+		Ref<IndexBuffer> QuadIndexBuffer;
 		Ref<Shader>TextureShader;
 		Ref<Texture2D>WhiteTexture;
 		
@@ -48,17 +51,17 @@ namespace Puppet {
 		};
 		CameraData CameraBuffer;
 		Ref<UniformBuffer> CameraUniformBuffer;
+		bool DepthTest = true;
 	};
 
-	static Renderer2DData s_Data;
+	static Renderer2DData s_Data2D;
 
 	void Renderer2D::Init()
 	{
 		PP_PROFILE_FUNCTION();
 
-		s_Data.QuadVertexArray = VertexArray::Create();
-		s_Data.QuadVertexBuffer = VertexBuffer::Create(s_Data.MaxVertices * sizeof(QuadVertex));
-		BufferLayout layout = {
+		PipelineSpecification pipelineSpecification;
+		pipelineSpecification.Layout = {
 			{ShaderDataType::Float3,"a_Position"},
 			{ShaderDataType::Float4,"a_Color"},
 			{ShaderDataType::Float2,"a_TexCoord"},
@@ -66,14 +69,14 @@ namespace Puppet {
 			{ShaderDataType::Float,"a_TilingFactor"},
 			{ShaderDataType::Int,"a_EntityID"},
 		};
-		s_Data.QuadVertexBuffer->SetLayout(layout);
-		s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
+		s_Data2D.QuadPipeline = Pipeline::Create(pipelineSpecification);
 
-		s_Data.QuadVertexBufferBase = new QuadVertex[s_Data.MaxVertices];
+		s_Data2D.QuadVertexBuffer = VertexBuffer::Create(s_Data2D.MaxVertices * sizeof(QuadVertex));
+		s_Data2D.QuadVertexBufferBase = new QuadVertex[s_Data2D.MaxVertices];
 
-		uint32_t* quadIndices = new uint32_t[s_Data.MaxIndices];
+		uint32_t* quadIndices = new uint32_t[s_Data2D.MaxIndices];
 		uint32_t offset = 0;
-		for (uint32_t i = 0; i < s_Data.MaxIndices; i += 6)
+		for (uint32_t i = 0; i < s_Data2D.MaxIndices; i += 6)
 		{
 			quadIndices[i+0] = offset + 0;
 			quadIndices[i+1] = offset + 1;
@@ -86,53 +89,50 @@ namespace Puppet {
 			offset += 4;
 		}
 
-		Ref<IndexBuffer>QuadIndexBuff=IndexBuffer::Create(quadIndices, s_Data.MaxIndices);
-		s_Data.QuadVertexArray->SetIndexBuffer(QuadIndexBuff);
+		s_Data2D.QuadIndexBuffer =IndexBuffer::Create(quadIndices, s_Data2D.MaxIndices);
 		delete[] quadIndices;
 
-		s_Data.WhiteTexture = Texture2D::Create(1, 1);
+		s_Data2D.WhiteTexture = Texture2D::Create(1, 1);
 		uint32_t whiteTextureData = 0xffffffff;
-		s_Data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
-
-		s_Data.TextureShader = Shader::Create("./assets/shaders/Texture.glsl");
-		s_Data.TextureShader->Bind();
+		s_Data2D.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
+		s_Data2D.TextureShader = Renderer::GetShaderLibrary()->Get("Texture2D");
+		s_Data2D.TextureShader->Bind();
 		
-		int samplers[s_Data.MaxTextureSlots];
-		for (int i = 0; i < s_Data.MaxTextureSlots; ++i)
+		int samplers[s_Data2D.MaxTextureSlots];
+		for (int i = 0; i < s_Data2D.MaxTextureSlots; ++i)
 			samplers[i] = i;
-		s_Data.TextureShader->SetIntArray("u_Textures", samplers, s_Data.MaxTextureSlots);
+		s_Data2D.TextureShader->SetIntArray("u_Textures", samplers, s_Data2D.MaxTextureSlots);
 
-		s_Data.TextureSlots[0] = s_Data.WhiteTexture;
+		s_Data2D.TextureSlots[0] = s_Data2D.WhiteTexture;
 
-		s_Data.QuadVertexPositions[0] = { -0.5f,-0.5f,0.0f,1.0f };
-		s_Data.QuadVertexPositions[1] = {  0.5f,-0.5f,0.0f,1.0f };
-		s_Data.QuadVertexPositions[2] = {  0.5f, 0.5f,0.0f,1.0f };
-		s_Data.QuadVertexPositions[3] = { -0.5f, 0.5f,0.0f,1.0f };
+		s_Data2D.QuadVertexPositions[0] = { -0.5f,-0.5f,0.0f,1.0f };
+		s_Data2D.QuadVertexPositions[1] = {  0.5f,-0.5f,0.0f,1.0f };
+		s_Data2D.QuadVertexPositions[2] = {  0.5f, 0.5f,0.0f,1.0f };
+		s_Data2D.QuadVertexPositions[3] = { -0.5f, 0.5f,0.0f,1.0f };
 
-		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
+		s_Data2D.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
 
 	}
 	void Renderer2D::Shutdown()
 	{
 		PP_PROFILE_FUNCTION();
 
-		delete[] s_Data.QuadVertexBufferBase;
+		delete[] s_Data2D.QuadVertexBufferBase;
 	}
-	void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& transform)
+	void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& viewMatrix)
 	{
 		PP_PROFILE_FUNCTION();
 
-		s_Data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
-		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData));
-
+		s_Data2D.CameraBuffer.ViewProjection = camera.GetProjection() * viewMatrix;
+		s_Data2D.CameraUniformBuffer->SetData(&s_Data2D.CameraBuffer, sizeof(Renderer2DData::CameraData));
 		StartBatch();
 	}
 	void Renderer2D::BeginScene(const EditorCamera& camera)
 	{
 		PP_PROFILE_FUNCTION();
 
-		s_Data.CameraBuffer.ViewProjection = camera.GetViewProjection();
-		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData));
+		s_Data2D.CameraBuffer.ViewProjection = camera.GetViewProjection();
+		s_Data2D.CameraUniformBuffer->SetData(&s_Data2D.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		StartBatch();
 	}
@@ -147,19 +147,22 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		if (s_Data.QuadIndexCount == 0)
+		if (s_Data2D.QuadIndexCount == 0)
 			return; // Nothing to draw
 
-		uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.QuadVertexBufferPtr - (uint8_t*)s_Data.QuadVertexBufferBase);
-		s_Data.QuadVertexBuffer->SetData((const void*)s_Data.QuadVertexBufferBase, dataSize);
+		uint32_t dataSize = (uint32_t)((uint8_t*)s_Data2D.QuadVertexBufferPtr - (uint8_t*)s_Data2D.QuadVertexBufferBase);
+		s_Data2D.QuadVertexBuffer->SetData((const void*)s_Data2D.QuadVertexBufferBase, dataSize);
 
+		s_Data2D.TextureShader->Bind();
 		// Bind textures
-		for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
-			s_Data.TextureSlots[i]->Bind(i);
+		for (uint32_t i = 0; i < s_Data2D.TextureSlotIndex; i++)
+			s_Data2D.TextureSlots[i]->Bind(i);
 
-		s_Data.TextureShader->Bind();
-		RenderCommand::DrawIndexed(s_Data.QuadVertexArray, s_Data.QuadIndexCount);
-		s_Data.Stats.DrawCalls++;
+		s_Data2D.QuadVertexBuffer->Bind();
+		s_Data2D.QuadPipeline->Bind();
+		s_Data2D.QuadIndexBuffer->Bind();
+		Renderer::DrawIndexed(s_Data2D.QuadIndexCount, PrimitiveType::Triangles, s_Data2D.DepthTest);
+		s_Data2D.Stats.DrawCalls++;
 	}
 	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
 	{
@@ -233,23 +236,23 @@ namespace Puppet {
 		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 		const float tilingFactor = 1.0f;
 
-		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
+		if (s_Data2D.QuadIndexCount >= Renderer2DData::MaxIndices)
 			NextBatch();
 
 		for (size_t i = 0; i < quadVertexCount; i++)
 		{
-			s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-			s_Data.QuadVertexBufferPtr->Color = color;
-			s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
-			s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
-			s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-			s_Data.QuadVertexBufferPtr->EntityID = entityID;
-			s_Data.QuadVertexBufferPtr++;
+			s_Data2D.QuadVertexBufferPtr->Position = transform * s_Data2D.QuadVertexPositions[i];
+			s_Data2D.QuadVertexBufferPtr->Color = color;
+			s_Data2D.QuadVertexBufferPtr->TexCoord = textureCoords[i];
+			s_Data2D.QuadVertexBufferPtr->TexIndex = textureIndex;
+			s_Data2D.QuadVertexBufferPtr->TilingFactor = tilingFactor;
+			s_Data2D.QuadVertexBufferPtr->EntityID = entityID;
+			s_Data2D.QuadVertexBufferPtr++;
 		}
 
-		s_Data.QuadIndexCount += 6;
+		s_Data2D.QuadIndexCount += 6;
 
-		s_Data.Stats.QuadCount++;
+		s_Data2D.Stats.QuadCount++;
 	}
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, int entityID)
 	{
@@ -258,13 +261,13 @@ namespace Puppet {
 		constexpr size_t quadVertexCount = 4;
 		constexpr glm::vec2 textureCoords[4] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 
-		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
+		if (s_Data2D.QuadIndexCount >= Renderer2DData::MaxIndices)
 			NextBatch();
 
 		float textureIndex = 0.0f;
-		for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
+		for (uint32_t i = 1; i < s_Data2D.TextureSlotIndex; i++)
 		{
-			if (*s_Data.TextureSlots[i] == *texture)
+			if (*s_Data2D.TextureSlots[i] == *texture)
 			{
 				textureIndex = (float)i;
 				break;
@@ -273,36 +276,36 @@ namespace Puppet {
 
 		if (textureIndex == 0.0f)
 		{
-			if (s_Data.TextureSlotIndex >= Renderer2DData::MaxTextureSlots)
+			if (s_Data2D.TextureSlotIndex >= Renderer2DData::MaxTextureSlots)
 				NextBatch();
 
-			textureIndex = (float)s_Data.TextureSlotIndex;
-			s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture;
-			s_Data.TextureSlotIndex++;
+			textureIndex = (float)s_Data2D.TextureSlotIndex;
+			s_Data2D.TextureSlots[s_Data2D.TextureSlotIndex] = texture;
+			s_Data2D.TextureSlotIndex++;
 		}
 
 		for (size_t i = 0; i < quadVertexCount; i++)
 		{
-			s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-			s_Data.QuadVertexBufferPtr->Color = tintColor;
-			s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
-			s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
-			s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-			s_Data.QuadVertexBufferPtr->EntityID = entityID;
-			s_Data.QuadVertexBufferPtr++;
+			s_Data2D.QuadVertexBufferPtr->Position = transform * s_Data2D.QuadVertexPositions[i];
+			s_Data2D.QuadVertexBufferPtr->Color = tintColor;
+			s_Data2D.QuadVertexBufferPtr->TexCoord = textureCoords[i];
+			s_Data2D.QuadVertexBufferPtr->TexIndex = textureIndex;
+			s_Data2D.QuadVertexBufferPtr->TilingFactor = tilingFactor;
+			s_Data2D.QuadVertexBufferPtr->EntityID = entityID;
+			s_Data2D.QuadVertexBufferPtr++;
 		}
 
-		s_Data.QuadIndexCount += 6;
+		s_Data2D.QuadIndexCount += 6;
 
-		s_Data.Stats.QuadCount++;
+		s_Data2D.Stats.QuadCount++;
 	}
 	
 
 	void Renderer2D::StartBatch()
 	{
-		s_Data.QuadIndexCount = 0;
-		s_Data.QuadVertexBufferPtr = s_Data.QuadVertexBufferBase;
-		s_Data.TextureSlotIndex = 1;
+		s_Data2D.QuadIndexCount = 0;
+		s_Data2D.QuadVertexBufferPtr = s_Data2D.QuadVertexBufferBase;
+		s_Data2D.TextureSlotIndex = 1;
 	}
 	void Renderer2D::NextBatch()
 	{
@@ -312,11 +315,11 @@ namespace Puppet {
 
 	Renderer2D::Statistics Renderer2D::GetStats()
 	{
-		return s_Data.Stats;
+		return s_Data2D.Stats;
 	}
 
 	void Renderer2D::ResetStats()
 	{
-		memset(&s_Data.Stats, 0, sizeof(Renderer2D::Statistics));
+		memset(&s_Data2D.Stats, 0, sizeof(Renderer2D::Statistics));
 	}
 }

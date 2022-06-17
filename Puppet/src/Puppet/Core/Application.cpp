@@ -5,6 +5,7 @@
 #include "Puppet/Platform/OpenGL/OpenGLVertexArray.h"
 #include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Renderer/Renderer2D.h"
+#include <imgui.h>
 namespace Puppet {
 
 	Application* Application::s_Instance = nullptr;
@@ -18,12 +19,11 @@ namespace Puppet {
 		m_Window->SetEventCallback(PP_BIND_EVENT_FN(Application::OnEvent));
 		m_Window->SetVSync(false);
 		
-		//Init Renderer or Renderer2D
-		Renderer::Init();
-
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
+		Renderer::Init();
+		Renderer::WaitAndRender();
 	}
 	Application::~Application()
 	{
@@ -45,6 +45,39 @@ namespace Puppet {
 		m_LayerStack.PushOverlay(layer);
 		layer->OnAttach();
 	}
+	void Application::RenderImGui()
+	{
+		PP_PROFILE_FUNCTION();
+
+		m_ImGuiLayer->Begin();
+		
+		{
+			ImGui::Begin("Renderer");
+			ImGui::Text("Frame Time: %d fps\n", m_FPS);
+			ImGui::End();
+		}
+		{
+			for (Layer* layer :m_LayerStack)
+				layer->OnUIRender();
+		}
+		m_ImGuiLayer->End();
+	}
+
+	const float Application::s_FPSAlpha = 1.0f / 100;
+	void Application::FlushFPS(float deltaTime)
+	{
+		mFrameCount++;
+		if (mFrameCount == 1)
+		{
+			mAvgDuration = deltaTime;
+		}
+		else
+		{
+			mAvgDuration = mAvgDuration * (1 - s_FPSAlpha) + deltaTime * s_FPSAlpha;
+		}
+		m_FPS = static_cast<int>(1.f / mAvgDuration);
+	}
+
 	bool Application::OnWindowClose(WindowCloseEvent& e)
 	{
 		PP_CORE_INFO(e);
@@ -63,6 +96,8 @@ namespace Puppet {
 			return false;
 		}
 		m_Minimized = false;
+
+		//TODO: temp resize all framebuffer
 		Renderer::OnWindowResize(w, h);
 		return false;
 	}
@@ -98,13 +133,10 @@ namespace Puppet {
 					for (Layer* layer : m_LayerStack)
 						layer->OnUpdate(timeStep);
 				}
-				m_ImGuiLayer->Begin();
-				{
-					PP_PROFILE_SCOPE("LayerStack OnUIRender");
-					for (Layer* layer : m_LayerStack)
-						layer->OnUIRender();
-				}
-				m_ImGuiLayer->End();
+				Application* app = this;
+				Renderer::Submit([app]() {app->RenderImGui();});
+				Renderer::WaitAndRender();
+				FlushFPS(timeStep.GetSeconds());
 			}
 			
 			m_Window->OnUpdate();

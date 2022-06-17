@@ -1,5 +1,6 @@
 #pragma once
 #include "Puppet/Renderer/Texture.h"
+#include "Puppet/Core/Buffer.h"
 #include "stb_image.h"
 #include <glad/glad.h>
 namespace Puppet {
@@ -30,6 +31,7 @@ namespace Puppet {
 		uint32_t m_RendererID;
 		GLenum m_InternalFormat, m_DataFormat;
 		bool m_IsLoaded = false;
+		Buffer m_ImageData;
 	};
 
 }

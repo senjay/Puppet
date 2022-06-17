@@ -96,6 +96,5 @@ void main()
 		case 31: texColor *= texture(u_Textures[31], Input.TexCoord * Input.TilingFactor); break;
 	}
 	color = texColor;
-
 	color2 = v_EntityID;
 }

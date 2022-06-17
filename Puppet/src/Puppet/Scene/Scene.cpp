@@ -4,6 +4,7 @@
 #include "Components.h"
 #include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Renderer/Renderer2D.h"
+#include "Puppet/Renderer/SceneRenderer.h"
 #include <glm/glm.hpp>
 namespace Puppet {
 
@@ -56,21 +57,29 @@ namespace Puppet {
     }
     void Scene::OnRenderEditor(TimeStep ts, const EditorCamera& editorCamera)
     {
-        Renderer2D::BeginScene(editorCamera);
-
+        SceneRenderer::BeginScene(this, {editorCamera, editorCamera.GetViewMatrix() });
         auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
         for (auto entity : group)
         {
             auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            Renderer2D::DrawSprite(transformComponent.Transform, sprite, (int)entity);
+           // Renderer2D::DrawSprite(transformComponent.Transform, sprite, (int)entity);
+            SceneRenderer::SubmitMesh(transformComponent.Transform, sprite.Color, (int)entity);
+           //Renderer::SubmitQuad(sprite.Texture, transformComponent.Transform);
         }
-
-        Renderer2D::EndScene();
+        SceneRenderer::EndScene();
     }
 
 
     void Scene::OnRenderRuntime(TimeStep ts)
     {
+        Entity mainCameraEntity = GetPrimaryCameraEntity();
+        if (!mainCameraEntity)
+        {
+            PP_CORE_ASSERT(mainCameraEntity, "Scene does not contain any cameras!");
+            return;
+        }
+        SceneCamera& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
+        glm::mat4 cameraTransform = mainCameraEntity.GetComponent<TransformComponent>().Transform;
         // Update scripts
         {
             m_Registry.view<NativeScriptComponent>().each([this,&ts](auto entity, auto& nsc)
@@ -86,37 +95,18 @@ namespace Puppet {
                     nsc.Instance->OnUpdate(ts);//µ÷ÓÃ½Å±¾
                 });
         }
-
-        Camera* mainCamera = nullptr;
-        glm::mat4 cameraTransform;
+        
+       //Renderer2D::BeginScene(mainCamera, cameraTransform);
+        SceneRenderer::BeginScene(this, { mainCamera, cameraTransform });
+        auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+        for (auto entity : group)
         {
-            auto view = m_Registry.view<TransformComponent, CameraComponent>();
-            for (auto entity : view)
-            {
-                auto [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
-
-                if (camera.Primary)
-                {
-                    mainCamera = &camera.Camera;
-                    cameraTransform = transform.Transform;
-                    break;
-                }
-            }
+            auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+            Renderer2D::DrawSprite(transformComponent.Transform, sprite, (int)entity);
+           // Renderer::SubmitQuad(sprite.Texture, transformComponent.Transform);
         }
-
-        if (mainCamera)
-        {
-            Renderer2D::BeginScene(*mainCamera, cameraTransform);
-
-            auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-            for (auto entity : group)
-            {
-                auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-                Renderer2D::DrawSprite(transformComponent.Transform, sprite,(int)entity);
-            }
-
-            Renderer2D::EndScene();
-        }
+        SceneRenderer::EndScene();
+      // Renderer2D::EndScene();
     }
 
     void Scene::DestroyEntity(Entity entity)

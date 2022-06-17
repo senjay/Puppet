@@ -37,14 +37,8 @@ namespace Puppet
 		void SaveSceneAs();
 
 		void UI_Toolbar();
-		
 		void CreateBindTestScripts();
 	private:
-		Scope<ShaderLibrary>m_ShaderLibrary;
-		Ref<Texture2D>m_Texture;
-		Ref<Framebuffer>m_Framebuffer;
-		Ref<Framebuffer>m_DrawFramebuffer;
-
 		Ref<Scene>m_ActiveScene;
 		EditorCamera m_EditorCamera;
 		Entity m_HoveredEntity;

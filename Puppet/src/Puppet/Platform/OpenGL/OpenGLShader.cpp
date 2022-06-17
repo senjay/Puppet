@@ -1,5 +1,6 @@
 #include "PPpch.h"
 #include "OpenGLShader.h"
+#include "Puppet/Renderer/Renderer.h"
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <shaderc/shaderc.hpp>
@@ -134,63 +135,82 @@ namespace Puppet
 	void OpenGLShader::Bind() const
 	{
 		PP_PROFILE_FUNCTION();
-
-		glUseProgram(m_RendererID);
+		Ref<const OpenGLShader> instance = this;
+		Renderer::Submit([instance]()mutable {
+			glUseProgram(instance->m_RendererID);
+		});
 	}
 	void OpenGLShader::UnBind() const
 	{
 		PP_PROFILE_FUNCTION();
 
-		glUseProgram(0);
+		Renderer::Submit([=]() {
+			glUseProgram(0);
+		});
 	}
 
 	void OpenGLShader::SetInt(const std::string& name, int value)
 	{
 		PP_PROFILE_FUNCTION();
-
-		UploadUniformInt(name, value);
+		Renderer::Submit([=](){
+			UploadUniformInt(name, value);
+		});
 	}
 
 	void OpenGLShader::SetIntArray(const std::string& name, int* values, uint32_t count)
 	{
 		PP_PROFILE_FUNCTION();
-
-		UploadUniformIntArray(name, values, count);
+		//TODO: =copy have problem?
+		Renderer::Submit([=]() {
+			UploadUniformIntArray(name, values, count);
+		});
 	}
 
 	void OpenGLShader::SetFloat(const std::string& name, float value)
 	{
 		PP_PROFILE_FUNCTION();
 
-		UploadUniformFloat(name, value);
+		Renderer::Submit([=]() {
+			UploadUniformFloat(name, value);
+			});
 	}
 
 	void OpenGLShader::SetFloat2(const std::string& name, const glm::vec2& value)
 	{
 		PP_PROFILE_FUNCTION();
 
-		UploadUniformFloat2(name, value);
+		Renderer::Submit([=]() {
+			UploadUniformFloat2(name, value);
+			});
 	}
 
 	void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value)
 	{
 		PP_PROFILE_FUNCTION();
 
-		UploadUniformFloat3(name, value);
+		Renderer::Submit([=]() {
+			UploadUniformFloat3(name, value);
+			});
 	}
 
 	void OpenGLShader::SetFloat4(const std::string& name, const glm::vec4& value)
 	{
 		PP_PROFILE_FUNCTION();
 
-		UploadUniformFloat4(name, value);
+
+		Renderer::Submit([=]() {
+			UploadUniformFloat4(name, value);
+			});
 	}
 
 	void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value)
 	{
 		PP_PROFILE_FUNCTION();
-
-		UploadUniformMat4(name, value);
+		
+		Renderer::Submit([=]() {
+			UploadUniformMat4(name, value);
+			});
+		
 	}
 	 
 	void OpenGLShader::UploadUniformInt(const std::string& name, int value)
@@ -402,7 +422,7 @@ namespace Puppet
 			}
 			else
 			{
-				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_FilePath.c_str(), options);
+				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_FilePath.c_str(), options);	
 				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
 				{
 					PP_CORE_ERROR(module.GetErrorMessage());

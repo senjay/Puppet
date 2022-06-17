@@ -2,6 +2,13 @@
 #include "Puppet/Core/Base.h"
 #include <string>
 namespace Puppet{
+	enum class TextureFormat
+	{
+		None = 0,
+		RGB = 1,
+		RGBA = 2,
+		Float16 = 3
+	};
 	class Texture :public RefCounted
 	{
 	public:
@@ -16,7 +23,7 @@ namespace Puppet{
 		virtual void Bind(uint32_t slot = 0) const = 0;
 
 		virtual bool IsLoaded() const = 0;
-
+		static uint32_t GetBPP(TextureFormat format);
 		virtual bool operator==(const Texture& other) const = 0;
 	};
 
