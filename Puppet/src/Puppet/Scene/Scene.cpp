@@ -62,7 +62,7 @@ namespace Puppet {
         for (auto entity : group)
         {
             auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            SceneRenderer::SubmitMesh(transformComponent.Transform, sprite.Color, (int)entity);
+            SceneRenderer::SubmitMesh(transformComponent.Transform, sprite, (int)entity);
         }
         SceneRenderer::EndScene();
     }
@@ -99,7 +99,7 @@ namespace Puppet {
         for (auto entity : group)
         {
             auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            SceneRenderer::SubmitMesh(transformComponent.Transform, sprite.Color, (int)entity);
+            SceneRenderer::SubmitMesh(transformComponent.Transform, sprite, (int)entity);
         }
         SceneRenderer::EndScene();
     }

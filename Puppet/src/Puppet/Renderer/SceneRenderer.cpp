@@ -20,7 +20,7 @@ namespace Puppet {
 		struct DrawCommand
 		{
 			glm::mat4 Transform;
-			glm::vec4 Color;
+			SpriteRendererComponent Sprite;
 			int EntityID;
 		};
 		std::vector<DrawCommand> DrawList;
@@ -44,7 +44,7 @@ namespace Puppet {
 		RenderPassSpec.TargetFramebuffer= Framebuffer::Create(fbSpec);
 		s_Data.GeoPass = RenderPass::Create(RenderPassSpec);
 		s_Data.TextureShader = ShaderLibrary::GetInstance().Get("Texture3D");
-		s_Data.material = TextureLibrary::GetInstance().Get("Logo");
+		s_Data.material = TextureLibrary::GetInstance().Get("DefaultTexture");
 		s_Data.TextureShader->Bind();
 		int samplers[32];
 		for (int i = 0; i < 32; ++i)
@@ -68,9 +68,9 @@ namespace Puppet {
 		s_Data.ActiveScene = nullptr;
 		FlushDrawList();
 	}
-	void SceneRenderer::SubmitMesh(const glm::mat4& transform, const glm::vec4& color,int entityid)
+	void SceneRenderer::SubmitMesh(const glm::mat4& transform, SpriteRendererComponent& src,int entityid)
 	{
-		s_Data.DrawList.push_back({ transform, color,entityid });
+		s_Data.DrawList.push_back({ transform, src,entityid });
 	}
 	Ref<RenderPass> SceneRenderer::GetFinalRenderPass()
 	{
@@ -102,7 +102,7 @@ namespace Puppet {
 		Renderer2D::BeginScene(s_Data.SceneData.SceneCamera.Camera, s_Data.SceneData.SceneCamera.ViewMatrix);
 		for (auto& dc : s_Data.DrawList)
 		{
-			Renderer2D::DrawQuad(dc.Transform, dc.Color, dc.EntityID);
+			Renderer2D::DrawSprite(dc.Transform, dc.Sprite, dc.EntityID);
 		}
 		Renderer2D::EndScene();
 		Renderer::EndRenderPass();

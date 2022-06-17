@@ -1,6 +1,7 @@
 #pragma once
 #include "Puppet/Scene/Scene.h"
 #include "Puppet/Renderer/RenderPass.h"
+#include "Puppet/Scene/Components.h"
 namespace Puppet {
 	struct SceneRendererCamera
 	{
@@ -19,7 +20,7 @@ namespace Puppet {
 		static void BeginScene(const Scene* scene, const SceneRendererCamera& camera);
 		static void EndScene();
 		//TODO :now use quad
-		static void SubmitMesh(const glm::mat4& transform, const glm::vec4& color, int entityid=-1);
+		static void SubmitMesh(const glm::mat4& transform, SpriteRendererComponent& src, int entityid=-1);
 
 		static Ref<RenderPass> GetFinalRenderPass();
 
