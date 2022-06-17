@@ -16,3 +16,6 @@
 [submodule "Puppet/vendor/ImGuizmo"]
 	path = Puppet/vendor/ImGuizmo
 	url = https://github.com/TheCherno/ImGuizmo.git
+[submodule "Puppet/vendor/assimp"]
+	path = Puppet/vendor/assimp
+	url = https://github.com/senjay/assimp.git

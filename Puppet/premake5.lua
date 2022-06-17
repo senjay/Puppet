@@ -34,6 +34,7 @@ project "Puppet"
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.VulkanSDK}",
+		"%{IncludeDir.assimp}",
 	}
 	links
 	{
@@ -41,7 +42,8 @@ project "Puppet"
 		"GLFW",
 		"Glad",
 		"yaml-cpp",
-		"opengl32.lib"
+		"opengl32.lib",
+		"assimp"
 	}
 
 	filter "files:vendor/ImGuizmo/**.cpp"

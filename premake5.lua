@@ -20,7 +20,7 @@ IncludeDir["entt"] = "%{wks.location}/Puppet/vendor/entt/include"
 IncludeDir["yaml_cpp"] = "%{wks.location}/Puppet/vendor/yaml-cpp/include"
 IncludeDir["ImGuizmo"] = "%{wks.location}/Puppet/vendor/ImGuizmo"
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
-
+IncludeDir["assimp"] =  "%{wks.location}/Puppet/vendor/assimp/include"
 
 LibraryDir = {}
 
@@ -47,6 +47,7 @@ group "Dependencies"
 	include "Puppet/vendor/Glad"
 	include "Puppet/vendor/imgui"
 	include "Puppet/vendor/yaml-cpp"
+	include "Puppet/vendor/assimp"
 group ""
 
 include "Puppet"
