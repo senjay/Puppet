@@ -8,7 +8,7 @@ namespace Puppet {
 	protected:
 		BaseSingleton() = default;
 	public:
-		static Derived& getInstance()noexcept(std::is_nothrow_constructible<Derived>::value)
+		static Derived& GetInstance()noexcept(std::is_nothrow_constructible<Derived>::value)
 		{
 			static Derived instance;
 			return instance;

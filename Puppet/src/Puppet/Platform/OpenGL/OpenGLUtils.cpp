@@ -31,4 +31,15 @@ namespace Puppet::OpenGLUtils
 		PP_CORE_ASSERT(false, "Unknown vertex buffer usage");
 		return 0;
 	}
+	GLenum GetOpenGLTextureFormat(TextureFormat format)
+	{
+		switch (format)
+		{
+		case Puppet::TextureFormat::RGB:     return GL_RGB;
+		case Puppet::TextureFormat::RGBA:    return GL_RGBA;
+		case Puppet::TextureFormat::Float16: return GL_RGBA16F;
+		}
+		PP_CORE_ASSERT(false, "Unknown texture format!");
+		return 0;
+	}
 }

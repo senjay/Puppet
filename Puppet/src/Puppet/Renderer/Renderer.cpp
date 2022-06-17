@@ -11,7 +11,6 @@ namespace Puppet {
 	{
 		Ref<RenderPass> m_ActiveRenderPass;
 		RenderCommandQueue m_CommandQueue;
-		Ref<ShaderLibrary> m_ShaderLibrary;
 
 		Ref<VertexBuffer> m_FullscreenQuadVertexBuffer;
 		Ref<IndexBuffer> m_FullscreenQuadIndexBuffer;
@@ -22,10 +21,6 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		s_Data.m_ShaderLibrary = CreateRef<ShaderLibrary>();
-		Renderer::GetShaderLibrary()->Load("./assets/shaders/Texture2D.glsl");
-		Renderer::GetShaderLibrary()->Load("./assets/shaders/Texture3D.glsl");
-		
 		Renderer::Submit([]() { RenderCommand::Init(); });
 
 
@@ -152,11 +147,6 @@ namespace Puppet {
 		Renderer::Submit([=]() {
 			RenderCommand::DrawIndexed(count, type, depthTest);
 		});
-	}
-
-	Ref<ShaderLibrary> Renderer::GetShaderLibrary()
-	{
-		return s_Data.m_ShaderLibrary;
 	}
 
 	RenderCommandQueue& Renderer::GetRenderCommandQueue()

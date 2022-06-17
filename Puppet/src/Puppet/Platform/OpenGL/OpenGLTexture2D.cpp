@@ -1,6 +1,7 @@
 #include "PPpch.h"
 #include "OpenGLTexture2D.h"
 #include "Puppet/Renderer/Renderer.h"
+#include "OpenGLUtils.h"
 namespace Puppet {
 
 

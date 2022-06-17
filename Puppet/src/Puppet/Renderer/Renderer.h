@@ -40,7 +40,6 @@ namespace Puppet {
 		static void EndRenderPass();
 		static void SubmitQuad(Ref<Texture2D> material, const glm::mat4& transform = glm::mat4(1.0f));
 		static void DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest = true);
-		static Ref<ShaderLibrary> GetShaderLibrary();
 		static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 	private:
 		static RenderCommandQueue& GetRenderCommandQueue();

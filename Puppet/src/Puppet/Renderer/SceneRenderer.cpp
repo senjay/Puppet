@@ -3,6 +3,8 @@
 #include "UniformBuffer.h"
 #include "Renderer.h"
 #include "Renderer2D.h"
+#include "Puppet/Library/TextureLibrary.h"
+#include "Puppet/Library/ShaderLibrary.h"
 namespace Puppet {
 
 	struct SceneRendererData
@@ -41,9 +43,8 @@ namespace Puppet {
 		fbSpec.Height = 720;
 		RenderPassSpec.TargetFramebuffer= Framebuffer::Create(fbSpec);
 		s_Data.GeoPass = RenderPass::Create(RenderPassSpec);
-		s_Data.TextureShader = Renderer::GetShaderLibrary()->Get("Texture3D");
-		s_Data.material = Texture2D::Create("./assets/textures/Logo.png");
-		//s_Data.TextureShader = Shader::Create("./assets/shaders/Texture2.glsl");
+		s_Data.TextureShader = ShaderLibrary::GetInstance().Get("Texture3D");
+		s_Data.material = TextureLibrary::GetInstance().Get("Logo");
 		s_Data.TextureShader->Bind();
 		int samplers[32];
 		for (int i = 0; i < 32; ++i)

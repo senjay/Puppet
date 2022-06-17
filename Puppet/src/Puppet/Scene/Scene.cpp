@@ -62,9 +62,7 @@ namespace Puppet {
         for (auto entity : group)
         {
             auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-           // Renderer2D::DrawSprite(transformComponent.Transform, sprite, (int)entity);
             SceneRenderer::SubmitMesh(transformComponent.Transform, sprite.Color, (int)entity);
-           //Renderer::SubmitQuad(sprite.Texture, transformComponent.Transform);
         }
         SceneRenderer::EndScene();
     }
@@ -96,17 +94,14 @@ namespace Puppet {
                 });
         }
         
-       //Renderer2D::BeginScene(mainCamera, cameraTransform);
-        SceneRenderer::BeginScene(this, { mainCamera, cameraTransform });
+        SceneRenderer::BeginScene(this, { mainCamera,  glm::inverse(cameraTransform) });
         auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
         for (auto entity : group)
         {
             auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            Renderer2D::DrawSprite(transformComponent.Transform, sprite, (int)entity);
-           // Renderer::SubmitQuad(sprite.Texture, transformComponent.Transform);
+            SceneRenderer::SubmitMesh(transformComponent.Transform, sprite.Color, (int)entity);
         }
         SceneRenderer::EndScene();
-      // Renderer2D::EndScene();
     }
 
     void Scene::DestroyEntity(Entity entity)

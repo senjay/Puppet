@@ -20,19 +20,4 @@ namespace Puppet
 		static Ref<Shader> Create(const std::string& name,const std::string& vertexSrc, const std::string& fragmentSrc);
 		static Ref<Shader> Create(const std::string& glslpath);
 	};
-
-	class ShaderLibrary :public RefCounted
-	{
-	public:
-		void Add(const std::string& name, const Ref<Shader>& shader);
-		Ref<Shader> Load(const std::string& filepath);
-		Ref<Shader> Load(const std::string& name, const std::string& filepath);
-		Ref<Shader> Load(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
-		Ref<Shader> Get(const std::string& name);
-		bool Exists(const std::string& name) const;
-	private:
-		void Add(const Ref<Shader>& shader);
-	private:
-		std::unordered_map<std::string, Ref<Shader>> m_Shaders;
-	};
 }

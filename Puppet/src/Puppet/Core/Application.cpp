@@ -5,6 +5,8 @@
 #include "Puppet/Platform/OpenGL/OpenGLVertexArray.h"
 #include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Renderer/Renderer2D.h"
+#include "Puppet/Library/TextureLibrary.h"
+#include "Puppet/Library/ShaderLibrary.h"
 #include <imgui.h>
 namespace Puppet {
 
@@ -22,6 +24,8 @@ namespace Puppet {
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
+		TextureLibrary::GetInstance().Init();
+		ShaderLibrary::GetInstance().Init();
 		Renderer::Init();
 		Renderer::WaitAndRender();
 	}

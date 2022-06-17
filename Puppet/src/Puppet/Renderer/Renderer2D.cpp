@@ -6,6 +6,8 @@
 #include "Pipeline.h"
 #include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Renderer/UniformBuffer.h"
+#include "Puppet/Library/TextureLibrary.h"
+#include "Puppet/Library/ShaderLibrary.h"
 #include <glm/ext/matrix_transform.hpp>
 namespace Puppet {
 
@@ -92,10 +94,8 @@ namespace Puppet {
 		s_Data2D.QuadIndexBuffer =IndexBuffer::Create(quadIndices, s_Data2D.MaxIndices);
 		delete[] quadIndices;
 
-		s_Data2D.WhiteTexture = Texture2D::Create(1, 1);
-		uint32_t whiteTextureData = 0xffffffff;
-		s_Data2D.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
-		s_Data2D.TextureShader = Renderer::GetShaderLibrary()->Get("Texture2D");
+		s_Data2D.WhiteTexture = TextureLibrary::GetInstance().Get("WhiteTexture");
+		s_Data2D.TextureShader = ShaderLibrary::GetInstance().Get("Texture2D");
 		s_Data2D.TextureShader->Bind();
 		
 		int samplers[s_Data2D.MaxTextureSlots];
