@@ -38,12 +38,17 @@ project "Puppet-Editor"
 		symbols "on"
 		postbuildcommands
 		{
-			"{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\""
+			"{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\"",
+			"{COPYDIR} \"%{LibraryDir.assimp_DebugDLL}\" \"%{cfg.targetdir}\""
 		}
 	filter "configurations:Release"
 		runtime "Release"
 		defines "PP_Release"
 		optimize "on"
+		postbuildcommands
+		{
+			"{COPYDIR} \"%{LibraryDir.assimp_ReleaseDLL}\" \"%{cfg.targetdir}\""
+		}
 
 	filter "configurations:Dist"
 		runtime "Release"

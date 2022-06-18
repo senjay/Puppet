@@ -28,6 +28,11 @@ LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
 LibraryDir["VulkanSDK_Debug"] = "%{wks.location}/Puppet/vendor/VulkanSDK/Lib"
 LibraryDir["VulkanSDK_DebugDLL"] = "%{wks.location}/Puppet/vendor/VulkanSDK/Bin"
 
+LibraryDir["assimp_Release"] = "%{wks.location}/Puppet/vendor/assimp/build/lib/Release"
+LibraryDir["assimp_Debug"] = "%{wks.location}/Puppet/vendor/assimp/build/lib/Debug"
+LibraryDir["assimp_ReleaseDLL"] = "%{wks.location}/Puppet/vendor/assimp/build/bin/Release"
+LibraryDir["assimp_DebugDLL"] = "%{wks.location}/Puppet/vendor/assimp/build/bin/Debug"
+
 Library = {}
 Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 Library["VulkanUtils"] = "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"
@@ -41,13 +46,14 @@ Library["ShaderC_Release"] = "%{LibraryDir.VulkanSDK}/shaderc_shared.lib"
 Library["SPIRV_Cross_Release"] = "%{LibraryDir.VulkanSDK}/spirv-cross-core.lib"
 Library["SPIRV_Cross_GLSL_Release"] = "%{LibraryDir.VulkanSDK}/spirv-cross-glsl.lib"
 
+Library["assimp_Release"] = "%{LibraryDir.assimp_Release}/assimp-vc142-mt.lib"
+Library["assimp_Debug"] = "%{LibraryDir.assimp_Debug}/assimp-vc142-mtd.lib"
 
 group "Dependencies"
 	include "Puppet/vendor/GLFW"
 	include "Puppet/vendor/Glad"
 	include "Puppet/vendor/imgui"
 	include "Puppet/vendor/yaml-cpp"
-	include "Puppet/vendor/assimp"
 group ""
 
 include "Puppet"

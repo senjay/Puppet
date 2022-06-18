@@ -42,8 +42,7 @@ project "Puppet"
 		"GLFW",
 		"Glad",
 		"yaml-cpp",
-		"opengl32.lib",
-		"assimp"
+		"opengl32.lib"
 	}
 
 	filter "files:vendor/ImGuizmo/**.cpp"
@@ -68,7 +67,8 @@ project "Puppet"
 		{
 			"%{Library.ShaderC_Debug}",
 			"%{Library.SPIRV_Cross_Debug}",
-			"%{Library.SPIRV_Cross_GLSL_Debug}"
+			"%{Library.SPIRV_Cross_GLSL_Debug}",
+			"%{Library.assimp_Debug}",
 		}
 
 	filter "configurations:Release"
@@ -79,7 +79,8 @@ project "Puppet"
 		{
 			"%{Library.ShaderC_Release}",
 			"%{Library.SPIRV_Cross_Release}",
-			"%{Library.SPIRV_Cross_GLSL_Release}"
+			"%{Library.SPIRV_Cross_GLSL_Release}",
+			"%{Library.assimp_Release}",
 		}
 
 	filter "configurations:Dist"
@@ -90,5 +91,6 @@ project "Puppet"
 		{
 			"%{Library.ShaderC_Release}",
 			"%{Library.SPIRV_Cross_Release}",
-			"%{Library.SPIRV_Cross_GLSL_Release}"
+			"%{Library.SPIRV_Cross_GLSL_Release}",
+			"%{Library.assimp_Release}",
 		}
