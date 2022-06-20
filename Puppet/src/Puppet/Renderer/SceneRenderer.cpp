@@ -5,6 +5,7 @@
 #include "Renderer2D.h"
 #include "Puppet/Library/TextureLibrary.h"
 #include "Puppet/Library/ShaderLibrary.h"
+#include "Puppet/Library/UniformBufferLibrary.h"
 namespace Puppet {
 
 	struct SceneRendererData
@@ -23,13 +24,14 @@ namespace Puppet {
 			SpriteRendererComponent Sprite;
 			int EntityID;
 		};
-		std::vector<DrawCommand> DrawList;
-		struct CameraData
+		struct DrawCommand2
 		{
-			glm::mat4 ViewProjection;
+			glm::mat4 Transform;
+			MeshComponent Model;
+			int EntityID;
 		};
-		CameraData CameraBuffer;
-		Ref<UniformBuffer> CameraUniformBuffer;
+		std::vector<DrawCommand> DrawList;
+		std::vector<DrawCommand2> DrawList2;
 		Ref<Texture2D> material;
 	};
 	static SceneRendererData s_Data;
@@ -50,7 +52,6 @@ namespace Puppet {
 		for (int i = 0; i < 32; ++i)
 			samplers[i] = i;
 		s_Data.TextureShader->SetIntArray("u_Textures", samplers, 32);
-		s_Data.CameraUniformBuffer= UniformBuffer::Create(sizeof(SceneRendererData::CameraData), 1);
 	}
 	void SceneRenderer::SetViewportSize(uint32_t width, uint32_t height)
 	{
@@ -60,8 +61,8 @@ namespace Puppet {
 	{
 		s_Data.ActiveScene = scene;
 		s_Data.SceneData.SceneCamera = camera;
-		s_Data.CameraBuffer.ViewProjection = camera.Camera.GetProjection()*camera.ViewMatrix;
-		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(SceneRendererData::CameraData));
+		glm::mat4 ViewProjection = camera.Camera.GetProjection()*camera.ViewMatrix;
+		UniformBufferLibrary::GetInstance().Get("CameraUniform")->SetData(&ViewProjection, sizeof(CameraData::ViewProjection));
 	}
 	void SceneRenderer::EndScene()
 	{
@@ -71,6 +72,10 @@ namespace Puppet {
 	void SceneRenderer::SubmitMesh(const glm::mat4& transform, SpriteRendererComponent& src,int entityid)
 	{
 		s_Data.DrawList.push_back({ transform, src,entityid });
+	}
+	void SceneRenderer::SubmitMesh(const glm::mat4& transform, MeshComponent& model, int entityid)
+	{
+		s_Data.DrawList2.push_back({ transform, model,entityid });
 	}
 	Ref<RenderPass> SceneRenderer::GetFinalRenderPass()
 	{
@@ -88,6 +93,7 @@ namespace Puppet {
 		PP_CORE_ASSERT(!s_Data.ActiveScene);
 		GeometryPass();
 		s_Data.DrawList.clear();
+		s_Data.DrawList2.clear();
 		//s_Data.SelectedMeshDrawList.clear();
 		//s_Data.ShadowPassDrawList.clear();
 		//s_Data.SceneData = {};
@@ -99,12 +105,19 @@ namespace Puppet {
 		//s_Data.TextureShader->Bind();
 		//glm::mat4 t(1.0f);
 		//Renderer::SubmitQuad(s_Data.material, t);
-		Renderer2D::BeginScene(s_Data.SceneData.SceneCamera.Camera, s_Data.SceneData.SceneCamera.ViewMatrix);
+		Renderer2D::BeginScene();
 		for (auto& dc : s_Data.DrawList)
 		{
 			Renderer2D::DrawSprite(dc.Transform, dc.Sprite, dc.EntityID);
 		}
 		Renderer2D::EndScene();
+		Ref<Shader>Defaultshader = ShaderLibrary::GetInstance().Get("Default");
+		for (auto& dc : s_Data.DrawList2)
+		{
+			glm::vec3 model = glm::vec3(dc.Transform[3]);
+			glm::vec3 campos=glm::vec3(glm::inverse(s_Data.SceneData.SceneCamera.ViewMatrix)[3]);
+			dc.Model.m_Mesh->Draw(dc.Transform, campos, Defaultshader, dc.EntityID);
+		}
 		Renderer::EndRenderPass();
 	}
 }
