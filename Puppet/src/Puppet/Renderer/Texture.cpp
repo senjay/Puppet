@@ -3,7 +3,7 @@
 #include "Puppet/Renderer/Renderer.h"
 #include "Puppet/Platform/OpenGL/OpenGLTexture2D.h"
 namespace Puppet {
-	Ref<Texture2D> Texture2D::Create(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap = TextureWrap::Clamp)
+	Ref<Texture2D> Texture2D::Create(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap)
 	{
 		switch (Renderer::GetAPI())
 		{
