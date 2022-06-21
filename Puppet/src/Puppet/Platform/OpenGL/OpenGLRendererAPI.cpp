@@ -2,15 +2,67 @@
 #include "OpenGLRendererAPI.h"
 #include <glad/glad.h>
 namespace Puppet {
+
+	static void OpenGLLogMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+	{
+		switch (severity)
+		{
+		case GL_DEBUG_SEVERITY_HIGH:
+			PP_CORE_ERROR("[OpenGL Debug HIGH] {0}", message);
+			PP_CORE_ASSERT(false, "GL_DEBUG_SEVERITY_HIGH");
+			break;
+		case GL_DEBUG_SEVERITY_MEDIUM:
+			PP_CORE_WARN("[OpenGL Debug MEDIUM] {0}", message);
+			break;
+		case GL_DEBUG_SEVERITY_LOW:
+			PP_CORE_INFO("[OpenGL Debug LOW] {0}", message);
+			break;
+		case GL_DEBUG_SEVERITY_NOTIFICATION:
+			// PP__CORE_TRACE("[OpenGL Debug NOTIFICATION] {0}", message);
+			break;
+		}
+	}
+
 	void OpenGLRendererAPI::Init()
 	{
-		glEnable(GL_BLEND);
-		//源色:后绘制的
-		//目标色:先绘制的
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDebugMessageCallback(OpenGLLogMessage, nullptr);
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+
+		//TODO:remove???
+		unsigned int vao;
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_STENCIL_TEST);
+		//glEnable(GL_CULL_FACE);
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		glFrontFace(GL_CCW);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_STENCIL_TEST);
+
+		auto& caps = OpenGLRendererAPI::GetCapabilities();
+
+		caps.Vendor = (const char*)glGetString(GL_VENDOR);
+		caps.Renderer = (const char*)glGetString(GL_RENDERER);
+		caps.Version = (const char*)glGetString(GL_VERSION);
+
+		glGetIntegerv(GL_MAX_SAMPLES, &caps.MaxSamples);
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &caps.MaxAnisotropy);
+
+		glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &caps.MaxTextureUnits);
+
+		GLenum error = glGetError();
+		while (error != GL_NO_ERROR)
+		{
+			PP_CORE_ERROR("OpenGL Error {0}", error);
+			error = glGetError();
+		}
 	}
 	void OpenGLRendererAPI::Shutdown()
 	{
@@ -53,6 +105,17 @@ namespace Puppet {
 	void OpenGLRendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 	{
 		glViewport(x, y, width, height);
+	}
+
+	void OpenGLRendererAPI::SetLineThickness(float thickness)
+	{
+		glLineWidth(thickness);
+	}
+
+	RenderAPICapabilities& OpenGLRendererAPI::GetCapabilities()
+	{
+		static RenderAPICapabilities capabilities;
+		return capabilities;
 	}
 
 }

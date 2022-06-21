@@ -29,6 +29,10 @@ namespace Puppet {
 		{
 			s_RendererAPI->Shutdown();
 		}
+		static RenderAPICapabilities& GetCapabilities()
+		{
+			return s_RendererAPI->GetCapabilities();
+		}
 	private:
 		static RendererAPI* s_RendererAPI;
 	};
