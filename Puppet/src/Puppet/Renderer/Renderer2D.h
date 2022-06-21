@@ -10,6 +10,7 @@ namespace Puppet {
 	public:
 		static void Init();
 		static void Shutdown();
+		static void BeginScene();
 		static void BeginScene(const Camera& camera, const glm::mat4& viewMatrix);
 		static void BeginScene(const EditorCamera& camera);
 		static void EndScene();

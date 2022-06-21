@@ -21,7 +21,7 @@ namespace Puppet {
 		static void EndScene();
 		//TODO :now use quad
 		static void SubmitMesh(const glm::mat4& transform, SpriteRendererComponent& src, int entityid=-1);
-
+		static void SubmitMesh(const glm::mat4& transform, MeshComponent& src, int entityid = -1);
 		static Ref<RenderPass> GetFinalRenderPass();
 
 		static RendererID SceneRenderer::GetFinalColorBufferRendererID();

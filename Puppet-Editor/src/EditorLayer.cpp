@@ -69,7 +69,7 @@ namespace Puppet {
 				Renderer::WaitAndRender();
 				int pixelData=SceneRenderer::GetFinalRenderPass()->GetSpecification().TargetFramebuffer->ReadPixel(1, mouseX, mouseY);
 				m_HoveredEntity = pixelData ==-1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
-				PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
+				//PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
 			}
 		}
 	}
@@ -218,16 +218,15 @@ namespace Puppet {
 		{
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
-			float windowWidth = (float)ImGui::GetWindowWidth();
-			float windowHeight = (float)ImGui::GetWindowHeight();
-			ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+			ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 			
 			// Editor camera
 			const glm::mat4& cameraProjection = m_EditorCamera.GetProjection();
-			const glm::mat4& cameraView= m_EditorCamera.GetViewMatrix();
+			glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
 
 			// Entity transform
-			glm::mat4& entityTransform = selectedEntity.GetComponent<TransformComponent>().Transform;
+			auto& tc = selectedEntity.GetComponent<TransformComponent>();
+			glm::mat4 transform = tc.GetTransform();
 
 			// Snapping
 			bool snap = Input::IsKeyPressed(Key::LeftControl);
@@ -237,10 +236,21 @@ namespace Puppet {
 				snapValue = 45.0f;
 
 			float snapValues[3] = { snapValue, snapValue, snapValue };
-			
+
 			ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-				(ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(entityTransform),
+				(ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
 				nullptr, snap ? snapValues : nullptr);
+
+			if (ImGuizmo::IsUsing())
+			{
+				glm::vec3 translation, rotation, scale;
+				Math::DecomposeTransform(transform, translation, rotation, scale);
+
+				glm::vec3 deltaRotation = rotation - tc.Rotation;
+				tc.Translation = translation;
+				tc.Rotation += deltaRotation;
+				tc.Scale = scale;
+			}
 		}
 		
 
@@ -439,6 +449,11 @@ namespace Puppet {
 			Entity spriteEntity= Entity{ entity, m_ActiveScene.get() };
 			spriteEntity.AddComponent<NativeScriptComponent>().Bind<SpriteController>();
 		}
+		Entity ModelEntity=m_ActiveScene->CreateEntity("model");
+		//ModelEntity.AddComponent<MeshComponent>("./assets/models/dancing-stormtrooper/source/silly_dancing.fbx");
+		ModelEntity.AddComponent<MeshComponent>("./assets/models/nanosuit/nanosuit.obj");
+		Entity PointLight = m_ActiveScene->CreateEntity("light");
+		PointLight.AddComponent<PointLightComponent>();
 	}
 
 

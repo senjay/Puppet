@@ -12,10 +12,10 @@ namespace Puppet {
 	}
 	OpenGLPipeline::~OpenGLPipeline()
 	{
-		Ref<OpenGLPipeline> instance = this;
-		Renderer::Submit([instance]()mutable
+		RendererID rid = m_VertexArrayRendererID;
+		Renderer::Submit([rid]()mutable
 			{
-				glDeleteVertexArrays(1, &instance->m_VertexArrayRendererID);
+				glDeleteVertexArrays(1, &rid);
 			});
 	}
 	void OpenGLPipeline::Invalidate()

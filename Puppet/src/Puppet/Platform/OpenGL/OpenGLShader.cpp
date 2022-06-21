@@ -93,23 +93,27 @@ namespace Puppet
 		return 0;
 	}
 
-	OpenGLShader::OpenGLShader(const std::string& glslpath)
+	OpenGLShader::OpenGLShader(const std::string& glslpath, bool isNative)
+		: m_FilePath(glslpath)
 	{
 		PP_PROFILE_FUNCTION();
+		if (isNative)
+			CreateNativeShader();
+		else
+			CreateCrossShader();
+		//Utils::CreateCacheDirectoryIfNeeded();
 
-		Utils::CreateCacheDirectoryIfNeeded();
-
-		std::filesystem::path path = glslpath;
-		m_Name =path.stem().string();
-		std::string source=ReadFile(glslpath);
-		auto shaderSources = PreProcess(source);
-		{
-			Timer timer;
-			CompileOrGetVulkanBinaries(shaderSources);
-			CompileOrGetOpenGLBinaries();
-			CreateProgram();
-			PP_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
-		}
+		//std::filesystem::path path = glslpath;
+		//m_Name =path.stem().string();
+		//std::string source=ReadFile(glslpath);
+		//auto shaderSources = PreProcess(source);
+		//{
+		//	Timer timer;
+		//	CompileOrGetVulkanBinaries(shaderSources);
+		//	CompileOrGetOpenGLBinaries();
+		//	CreateProgram();
+		//	PP_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
+		//}
 	}
 	OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc)
 		:m_Name(name)
@@ -120,7 +124,7 @@ namespace Puppet
 			{GL_VERTEX_SHADER,vertexSrc},
 			{GL_FRAGMENT_SHADER,fragmentSrc}
 		};
-		CompileOrGetVulkanBinaries(shaderSources);
+		CompileOrGetVulkanBinaries();
 		CompileOrGetOpenGLBinaries();
 		CreateProgram();
 	}
@@ -130,7 +134,10 @@ namespace Puppet
 	{
 		PP_PROFILE_FUNCTION();
 
-		glDeleteProgram(m_RendererID);
+		RendererID rid = m_RendererID;
+		Renderer::Submit([rid]() {
+			glDeleteProgram(rid);
+		});
 	}
 	void OpenGLShader::Bind() const
 	{
@@ -144,7 +151,7 @@ namespace Puppet
 	{
 		PP_PROFILE_FUNCTION();
 
-		Renderer::Submit([=]() {
+		Renderer::Submit([]() {
 			glUseProgram(0);
 		});
 	}
@@ -210,7 +217,7 @@ namespace Puppet
 		Renderer::Submit([=]() {
 			UploadUniformMat4(name, value);
 			});
-		
+
 	}
 	 
 	void OpenGLShader::UploadUniformInt(const std::string& name, int value)
@@ -292,10 +299,9 @@ namespace Puppet
 		return result;
 	}
 
-	std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::string& source)
+	void OpenGLShader::PreProcess(const std::string& source)
 	{
-		std::unordered_map<GLenum, std::string> shaderSources;
-
+		m_SourceCode.clear();
 		const char* typeToken = "#type";
 		size_t typeTokenLength = strlen(typeToken);
 		size_t pos = source.find(typeToken, 0); //Start of shader type declaration line
@@ -311,17 +317,49 @@ namespace Puppet
 			PP_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
 			pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
 
-			shaderSources[ShaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
+			m_SourceCode[ShaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
 		}
-		return shaderSources;
 	}
 
-	void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources)
+	void OpenGLShader::CreateNativeShader()
+	{
+		Utils::CreateCacheDirectoryIfNeeded();
+		std::filesystem::path path = m_FilePath;
+		m_Name = path.stem().string();
+		std::string source = ReadFile(m_FilePath);
+		PreProcess(source);
+		Compile();
+		//{
+		//	Timer timer;
+		//	//CompileOrGetVulkanBinaries(shaderSources);
+		//	CompileOrGetOpenGLBinaries();
+		//	CreateProgram();
+		//	PP_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
+		//}
+	}
+
+	void OpenGLShader::CreateCrossShader()
+	{
+		Utils::CreateCacheDirectoryIfNeeded();
+		std::filesystem::path path = m_FilePath;
+		m_Name = path.stem().string();
+		std::string source = ReadFile(m_FilePath);
+		PreProcess(source);
+		{
+			Timer timer;
+			CompileOrGetVulkanBinaries();
+			CompileOrGetOpenGLBinaries();
+			CreateProgram();
+			PP_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
+		}
+	}
+
+	void OpenGLShader::Compile()
 	{
 		GLuint program = glCreateProgram();
 		std::vector<GLuint> glShaderIDs;
-		glShaderIDs.reserve(shaderSources.size());
-		for (auto&& [type, source] : shaderSources)
+		glShaderIDs.reserve(m_SourceCode.size());
+		for (auto&& [type, source] : m_SourceCode)
 		{
 			// Create an empty vertex shader handle
 			GLuint shader = glCreateShader(type);
@@ -389,7 +427,7 @@ namespace Puppet
 			glDetachShader(m_RendererID, id);
 	}
 	
-	void OpenGLShader::CompileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources)
+	void OpenGLShader::CompileOrGetVulkanBinaries()
 	{
 		GLuint program = glCreateProgram();
 
@@ -402,9 +440,8 @@ namespace Puppet
 
 		std::filesystem::path cacheDirectory = Utils::GetCacheDirectory();
 
-		auto& shaderData = m_VulkanSPIRV;
-		shaderData.clear();
-		for (auto&& [stage, source] : shaderSources)
+		m_VulkanSPIRV.clear();
+		for (auto&& [stage, source] : m_SourceCode)
 		{
 			std::filesystem::path shaderFilePath = m_FilePath;
 			std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + Utils::GLShaderStageCachedVulkanFileExtension(stage));
@@ -416,7 +453,7 @@ namespace Puppet
 				auto size = in.tellg();
 				in.seekg(0, std::ios::beg);
 
-				auto& data = shaderData[stage];
+				auto& data = m_VulkanSPIRV[stage];
 				data.resize(size / sizeof(uint32_t));
 				in.read((char*)data.data(), size);
 			}
@@ -429,12 +466,12 @@ namespace Puppet
 					PP_CORE_ASSERT(false);
 				}
 
-				shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
+				m_VulkanSPIRV[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
 
 				std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
 				if (out.is_open())
 				{
-					auto& data = shaderData[stage];
+					auto& data = m_VulkanSPIRV[stage];
 					out.write((char*)data.data(), data.size() * sizeof(uint32_t));
 					out.flush();
 					out.close();
@@ -442,13 +479,11 @@ namespace Puppet
 			}
 		}
 
-		for (auto&& [stage, data] : shaderData)
+		for (auto&& [stage, data] : m_VulkanSPIRV)
 			Reflect(stage, data);
 	}
 	void OpenGLShader::CompileOrGetOpenGLBinaries()
 	{
-		auto& shaderData = m_OpenGLSPIRV;
-
 		shaderc::Compiler compiler;
 		shaderc::CompileOptions options;
 		options.SetTargetEnvironment(shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
@@ -458,8 +493,8 @@ namespace Puppet
 
 		std::filesystem::path cacheDirectory = Utils::GetCacheDirectory();
 
-		shaderData.clear();
-		m_OpenGLSourceCode.clear();
+		m_OpenGLSPIRV.clear();
+		m_SourceCode.clear();
 		for (auto&& [stage, spirv] : m_VulkanSPIRV)
 		{
 			std::filesystem::path shaderFilePath = m_FilePath;
@@ -472,15 +507,15 @@ namespace Puppet
 				auto size = in.tellg();
 				in.seekg(0, std::ios::beg);
 
-				auto& data = shaderData[stage];
+				auto& data = m_OpenGLSPIRV[stage];
 				data.resize(size / sizeof(uint32_t));
 				in.read((char*)data.data(), size);
 			}
 			else
 			{
 				spirv_cross::CompilerGLSL glslCompiler(spirv);
-				m_OpenGLSourceCode[stage] = glslCompiler.compile();
-				auto& source = m_OpenGLSourceCode[stage];
+				m_SourceCode[stage] = glslCompiler.compile();
+				auto& source = m_SourceCode[stage];
 
 				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_FilePath.c_str());
 				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
@@ -489,12 +524,12 @@ namespace Puppet
 					PP_CORE_ASSERT(false);
 				}
 
-				shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
+				m_OpenGLSPIRV[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
 
 				std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
 				if (out.is_open())
 				{
-					auto& data = shaderData[stage];
+					auto& data = m_OpenGLSPIRV[stage];
 					out.write((char*)data.data(), data.size() * sizeof(uint32_t));
 					out.flush();
 					out.close();

@@ -15,10 +15,8 @@ namespace Puppet {
 
 		virtual void OnUpdate(TimeStep ts) override
 		{
-			auto& Transform = GetComponent<TransformComponent>().Transform;
 			float speed = 0.1f;
-			Transform = glm::translate(Transform, glm::vec3(0,0,ts* speed));
-			
+			GetComponent<TransformComponent>().Translation += glm::vec3(0, 0, ts * speed);		
 		}
 	};
 }

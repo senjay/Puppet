@@ -47,12 +47,12 @@ namespace Puppet {
 		
 		Renderer2D::Statistics Stats;
 
-		struct CameraData
-		{
-			glm::mat4 ViewProjection;
-		};
-		CameraData CameraBuffer;
-		Ref<UniformBuffer> CameraUniformBuffer;
+		//struct CameraData
+		//{
+		//	glm::mat4 ViewProjection;
+		//};
+		//CameraData CameraBuffer;
+		//Ref<UniformBuffer> CameraUniformBuffer;
 		bool DepthTest = true;
 	};
 
@@ -110,7 +110,7 @@ namespace Puppet {
 		s_Data2D.QuadVertexPositions[2] = {  0.5f, 0.5f,0.0f,1.0f };
 		s_Data2D.QuadVertexPositions[3] = { -0.5f, 0.5f,0.0f,1.0f };
 
-		s_Data2D.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
+		//s_Data2D.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
 
 	}
 	void Renderer2D::Shutdown()
@@ -119,20 +119,26 @@ namespace Puppet {
 
 		delete[] s_Data2D.QuadVertexBufferBase;
 	}
+	void Renderer2D::BeginScene()
+	{
+		PP_PROFILE_FUNCTION();
+
+		StartBatch();
+	}
 	void Renderer2D::BeginScene(const Camera& camera, const glm::mat4& viewMatrix)
 	{
 		PP_PROFILE_FUNCTION();
 
-		s_Data2D.CameraBuffer.ViewProjection = camera.GetProjection() * viewMatrix;
-		s_Data2D.CameraUniformBuffer->SetData(&s_Data2D.CameraBuffer, sizeof(Renderer2DData::CameraData));
+		//s_Data2D.CameraBuffer.ViewProjection = camera.GetProjection() * viewMatrix;
+		//s_Data2D.CameraUniformBuffer->SetData(&s_Data2D.CameraBuffer, sizeof(Renderer2DData::CameraData));
 		StartBatch();
 	}
 	void Renderer2D::BeginScene(const EditorCamera& camera)
 	{
 		PP_PROFILE_FUNCTION();
 
-		s_Data2D.CameraBuffer.ViewProjection = camera.GetViewProjection();
-		s_Data2D.CameraUniformBuffer->SetData(&s_Data2D.CameraBuffer, sizeof(Renderer2DData::CameraData));
+		//s_Data2D.CameraBuffer.ViewProjection = camera.GetViewProjection();
+		//s_Data2D.CameraUniformBuffer->SetData(&s_Data2D.CameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		StartBatch();
 	}

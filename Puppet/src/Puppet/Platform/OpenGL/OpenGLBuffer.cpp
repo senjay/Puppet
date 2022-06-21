@@ -37,10 +37,10 @@ namespace Puppet {
 	OpenGLVertexBuffer::~OpenGLVertexBuffer()
 	{
 		PP_PROFILE_FUNCTION();
-		Ref<OpenGLVertexBuffer> instance = this;
-		Renderer::Submit([instance]()mutable
+		RendererID rid = m_RendererID;
+		Renderer::Submit([rid]()mutable
 		{
-			glDeleteBuffers(1, &instance->m_RendererID);
+			glDeleteBuffers(1, &rid);
 		});
 	}
 
@@ -99,10 +99,10 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		Ref<OpenGLIndexBuffer> instance = this;
-		Renderer::Submit([instance]()mutable
+		RendererID rid = m_RendererID;
+		Renderer::Submit([rid]()
 		{
-			glDeleteBuffers(1, &instance->m_RendererID);
+			glDeleteBuffers(1, &rid);
 		});
 	}
 

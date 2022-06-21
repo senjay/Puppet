@@ -23,15 +23,15 @@ namespace Puppet {
 		Add(name, shader);
 	}
 
-	Ref<Shader> ShaderLibrary::Load(const std::string& filepath)
+	Ref<Shader> ShaderLibrary::Load(const std::string& filepath, bool isGLNative)
 	{
-		auto shader = Shader::Create(filepath);
+		auto shader = Shader::Create(filepath, isGLNative);
 		Add(shader);
 		return shader;
 	}
-	Ref<Shader> ShaderLibrary::Load(const std::string& name, const std::string& filepath)
+	Ref<Shader> ShaderLibrary::Load(const std::string& name, const std::string& filepath,bool isGLNative)
 	{
-		auto shader = Shader::Create(filepath);
+		auto shader = Shader::Create(filepath, isGLNative);
 		Add(name, shader);
 		return shader;
 	}
@@ -47,7 +47,16 @@ namespace Puppet {
 	}
 	void ShaderLibrary::Init()
 	{
-		Load("Texture2D", "./assets/shaders/Texture2D.glsl");
-		Load("Texture3D", "./assets/shaders/Texture3D.glsl");
+		Load("Texture2D", "./assets/shaders/Texture2D.glsl",false);
+		Load("Texture3D", "./assets/shaders/Texture3D.glsl", false);
+		
+		Load("SceneComposite", "./assets/shaders/gl/SceneComposite.glsl", true);
+		Load("BloomBlur", "./assets/shaders/gl/BloomBlur.glsl", true);
+		Load("BloomBlend", "./assets/shaders/gl/BloomBlend.glsl", true);
+		Load("ShadowMap", "./assets/shaders/gl/ShadowMap.glsl", true);
+
+		Load("Default", "./assets/shaders/BasePBR.glsl",true);
+		Load("NormalOutline", "./assets/shaders/NormalOutline.glsl", true);
+		Load("NormalOutline_anim", "./assets/shaders/NormalOutline_anim.glsl", true);
 	}
 }

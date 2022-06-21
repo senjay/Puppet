@@ -32,7 +32,7 @@ namespace Puppet {
 
 	void RenderCommandQueue::Execute()
 	{
-		PP_CORE_TRACE("RenderCommandQueue::Execute -- {0} commands, {1} bytes", m_CommandCount, (m_CommandBufferPtr - m_CommandBuffer));
+		//PP_CORE_TRACE("RenderCommandQueue::Execute -- {0} commands, {1} bytes", m_CommandCount, (m_CommandBufferPtr - m_CommandBuffer));
 
 		uint8_t* buffer = m_CommandBuffer;
 

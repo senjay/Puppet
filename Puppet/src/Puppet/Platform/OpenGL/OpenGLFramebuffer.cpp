@@ -109,11 +109,12 @@ namespace Puppet {
 
 	OpenGLFramebuffer::~OpenGLFramebuffer()
 	{
-		Ref<OpenGLFramebuffer> instance = this;
-		Renderer::Submit([instance]()mutable {
-			glDeleteFramebuffers(1, &instance->m_RendererID);
-			glDeleteTextures(instance->m_ColorAttachments.size(), instance->m_ColorAttachments.data());
-			glDeleteTextures(1, &instance->m_DepthAttachment);
+		RendererID rid = m_RendererID;
+		RendererID DepthAttachment = m_DepthAttachment;
+		Renderer::Submit([rid, DepthAttachment,ColorAttachments=std::move(m_ColorAttachments)]()mutable {
+			glDeleteFramebuffers(1, &rid);
+			glDeleteTextures(ColorAttachments.size(), ColorAttachments.data());
+			glDeleteTextures(1, &DepthAttachment);
 		});
 	}
 

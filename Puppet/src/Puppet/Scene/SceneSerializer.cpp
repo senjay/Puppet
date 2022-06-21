@@ -155,11 +155,10 @@ namespace Puppet {
 		{
 			out << YAML::Key << "TransformComponent";
 			out << YAML::BeginMap; // TransformComponent
-			const glm::mat4& transform=entity.GetComponent<TransformComponent>().Transform;
-			auto [pos, rot, scale] = Math::DecomposeTransform(transform);
-			out << YAML::Key << "Translation" << YAML::Value << pos;
-			out << YAML::Key << "Rotation" << YAML::Value << glm::degrees(glm::eulerAngles(rot));
-			out << YAML::Key << "Scale" << YAML::Value << scale;
+			auto& tc = entity.GetComponent<TransformComponent>();
+			out << YAML::Key << "Translation" << YAML::Value << tc.Translation;
+			out << YAML::Key << "Rotation" << YAML::Value << tc.Rotation;
+			out << YAML::Key << "Scale" << YAML::Value << tc.Scale;
 
 			out << YAML::EndMap; // TransformComponent
 		}
@@ -273,14 +272,11 @@ namespace Puppet {
 				if (transformComponent)
 				{
 					// Entities always have transforms
-					glm::mat4& transform = deserializedEntity.GetComponent<TransformComponent>().Transform;
-					glm::vec3 translation = transformComponent["Translation"].as<glm::vec3>();
-					//glm::quat rotation = transformComponent["Rotation"].as<glm::quat>();
-					glm::vec3 eulerDegrees =transformComponent["Rotation"].as<glm::vec3>();
-					glm::quat quat = glm::quat(glm::radians(eulerDegrees));
-					glm::vec3 scale = transformComponent["Scale"].as<glm::vec3>();
-					transform = glm::translate(glm::mat4(1.0f), translation) *
-						glm::toMat4(quat) * glm::scale(glm::mat4(1.0f), scale);
+					auto& tc = deserializedEntity.GetComponent<TransformComponent>();
+					tc.Translation = transformComponent["Translation"].as<glm::vec3>();
+					glm::vec3 eulerDegrees = transformComponent["Rotation"].as<glm::vec3>();
+					tc.Rotation = glm::radians(eulerDegrees);
+					tc.Scale = transformComponent["Scale"].as<glm::vec3>();
 				}
 
 				auto cameraComponent = entity["CameraComponent"];

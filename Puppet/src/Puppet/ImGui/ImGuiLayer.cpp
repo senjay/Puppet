@@ -39,9 +39,9 @@ namespace Puppet {
 		io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", 18.0f);
 		io.FontDefault=io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", 18.0f);
 		// Setup Dear ImGui style
-		ImGui::StyleColorsDark();
+		//ImGui::StyleColorsDark();
 		//ImGui::StyleColorsClassic();
-		//ImGui::StyleColorsLight();
+		ImGui::StyleColorsLight();
 		// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
 		ImGuiStyle& style = ImGui::GetStyle();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -50,7 +50,7 @@ namespace Puppet {
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		SetDarkThemeColors();
+		//SetDarkThemeColors();
 		
 		GLFWwindow* window= static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		// Setup Platform/Renderer backends

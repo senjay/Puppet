@@ -6,7 +6,7 @@ namespace Puppet {
 	public:
 		virtual void OnCreate() override
 		{
-			auto& translation = GetComponent<TransformComponent>().Transform;
+			//auto& translation = GetComponent<TransformComponent>().Transform;
 			//translation.x = rand() % 10 - 5.0f;
 		}
 
@@ -16,7 +16,6 @@ namespace Puppet {
 
 		virtual void OnUpdate(TimeStep ts) override
 		{
-			auto& Transform = GetComponent<TransformComponent>().Transform;
 
 			float speed = 5.0f;
 			bool modify = false;
@@ -33,7 +32,7 @@ namespace Puppet {
 			if (modify)
 			{
 				PP_CORE_INFO("{0},{1},{2}", translation.x, translation.y, translation.z);
-				GetComponent<TransformComponent>().Transform = glm::translate(Transform, translation);
+				GetComponent<TransformComponent>().Translation += translation;
 			}
 		}
 	};

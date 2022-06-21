@@ -18,9 +18,9 @@ namespace Puppet {
 
 	OpenGLUniformBuffer::~OpenGLUniformBuffer()
 	{
-		Ref<OpenGLUniformBuffer> instance = this;
-		Renderer::Submit([instance]()mutable {
-			glDeleteBuffers(1, &instance->m_RendererID);
+		RendererID rid = m_RendererID;
+		Renderer::Submit([rid]() {
+			glDeleteBuffers(1, &rid);
 		});
 		
 	}

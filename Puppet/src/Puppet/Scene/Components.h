@@ -7,6 +7,7 @@
 #include "Puppet/Renderer/Texture.h"
 #include "Puppet/Camera/SceneCamera.h"
 #include "ScriptableEntity.h"
+#include "Puppet/Mesh/Mesh.h"
 namespace Puppet {
 
 	struct TagComponent
@@ -21,14 +22,20 @@ namespace Puppet {
 
 	struct TransformComponent
 	{
-		glm::mat4 Transform;
-		TransformComponent():Transform(glm::mat4(1.0)){}
+		//glm::mat4 Transform;
+		glm::vec3 Translation = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 Rotation = { 0.0f, 0.0f, 0.0f };// Euler angles,radius
+		glm::vec3 Scale = { 1.0f, 1.0f, 1.0f };
+		TransformComponent() {}
 		TransformComponent(const TransformComponent & other) = default;
-		TransformComponent(const glm::mat4 & transform)
-			: Transform(transform) {}
+		glm::mat4 GetTransform() const
+		{
+			glm::mat4 rotation = glm::toMat4(glm::quat(Rotation));
 
-		operator glm::mat4& () { return Transform; }
-		operator const glm::mat4& () const { return Transform; }
+			return glm::translate(glm::mat4(1.0f), Translation)
+				* rotation
+				* glm::scale(glm::mat4(1.0f), Scale);
+		}
 	};
 
 	struct SpriteRendererComponent
@@ -69,5 +76,42 @@ namespace Puppet {
 			DestroyScript = [](NativeScriptComponent* nsc) { delete nsc->Instance; nsc->Instance = nullptr; };
 		}
 	};
+	struct MeshComponent
+	{
+		MeshComponent() { m_Mesh = CreateRef<Mesh>(); };
+		MeshComponent(const MeshComponent&) = default;
+		MeshComponent(const std::string & path)
+			: Path(path), m_Mesh(CreateRef<Mesh>(path))
+		{
+		}
+		//MeshComponent(const std::filesystem::path& path)
+		//	: Path(path)
+		//{
+		//}
 
+		std::string Path = "None";
+		Ref<Mesh> m_Mesh;
+	};
+
+	class PointLightComponent
+	{
+	public:
+		PointLightComponent() = default;
+		PointLightComponent(const PointLightComponent&) = default;
+		PointLightComponent(float intensity, const glm::vec3& lightColor)
+			: Intensity(intensity), LightColor(lightColor) {}
+
+		float Intensity = 100.0f;
+		glm::vec3 LightColor = { 1.0f, 1.0f, 1.0f };
+	};
+	class DirectionalLightComponent
+	{
+	public:
+		DirectionalLightComponent() = default;
+		DirectionalLightComponent(const DirectionalLightComponent&) = default;
+		DirectionalLightComponent(float intensity)
+			: Intensity(intensity) {}
+
+		float Intensity = 1.0f;
+	};
 }

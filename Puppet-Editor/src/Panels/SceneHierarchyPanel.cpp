@@ -5,6 +5,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "Puppet/Scene/Components.h"
 #include "Puppet/Math/MathUtils.h"
+#include "Puppet/Utils/PlatformUtils.h"
+#include "../ImGuiUtils/ImGuiWrapper.h"
 namespace Puppet {
 	extern const std::filesystem::path g_AssetPath;
 
@@ -261,20 +263,12 @@ namespace Puppet {
 		DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component)
 			{
 				
-				auto [translation, rotationQuat, scale] = Math::DecomposeTransform(component.Transform);
 				bool updateTransform = false;
-				updateTransform |= DrawVec3Control("Translation", translation);
-				glm::vec3 rotation = glm::degrees(glm::eulerAngles(rotationQuat));
+				updateTransform |= DrawVec3Control("Translation", component.Translation);
+				glm::vec3 rotation = glm::degrees(component.Rotation);
 				updateTransform |= DrawVec3Control("Rotation", rotation);
-				updateTransform |= DrawVec3Control("Scale", scale, 1.0f);
-
-				if (updateTransform)
-				{
-					component.Transform = glm::translate(glm::mat4(1.0f), translation) *
-						glm::toMat4(glm::quat(glm::radians(rotation))) *
-						glm::scale(glm::mat4(1.0f), scale);
-				}
-
+				component.Rotation = glm::radians(rotation);
+				updateTransform |= DrawVec3Control("Scale", component.Scale, 1.0f);
 			});
 
 		DrawComponent<CameraComponent>("Camera", entity, [](auto& component)
@@ -358,5 +352,249 @@ namespace Puppet {
 
 				ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f);
 			});
+		
+		DrawComponent<MeshComponent>("Mesh Renderer", entity, [](MeshComponent& component)
+			{
+				ImGui::Columns(2, nullptr, false);
+				ImGui::SetColumnWidth(0, 100.0f);
+				ImGui::Text("Mesh Path");
+				ImGui::NextColumn();
+
+				std::string standardPath = component.Path;
+				ImGui::Text(standardPath.c_str());
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					{
+						auto path = (const wchar_t*)payload->Data;
+						component.Path = (std::filesystem::path("assets") / path).string();
+						component.m_Mesh = CreateRef<Mesh>(component.Path);
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("..."))
+				{
+					std::string filepath = FileDialogs::OpenFile("Model (*.obj *.fbx *.dae *.gltf)\0");
+					if (filepath.find("Assets") != std::string::npos)
+					{
+						filepath = filepath.substr(filepath.find("Assets"), filepath.length());
+					}
+					else
+					{
+						// TODO: Import Mesh
+						//HE_CORE_ASSERT(false, "HEngine Now Only support the model from Assets!");
+						//filepath = "";
+					}
+					if (!filepath.empty())
+					{
+						component.m_Mesh = CreateRef<Mesh>(filepath);
+						component.Path = filepath;
+					}
+				}
+				ImGui::EndColumns();
+
+				if (ImGuiUtils::TreeNodeExStyle2((void*)"Material", "Material"))
+				{
+					uint32_t matIndex = 0;
+
+					const auto& materialNode = [&matIndex = matIndex](const char* name, Ref<Material>& material, Ref<Texture2D>& tex, void(*func)(Ref<Material>& mat)) {
+						std::string label = std::string(name) + std::to_string(matIndex);
+						ImGui::PushID(label.c_str());
+
+						if (ImGui::TreeNode((void*)name, name))
+						{
+							ImGui::Image((ImTextureID)tex->GetRendererID(), ImVec2(64, 64), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+							if (ImGui::BeginDragDropTarget())
+							{
+								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+								{
+									const wchar_t* path = (const wchar_t*)payload->Data;
+									std::string Path = (std::filesystem::path("assets") / path).string();
+									tex = TextureLibrary::GetInstance().FindorAdd("xx", Path);
+								}
+								ImGui::EndDragDropTarget();
+							}
+
+							func(material);
+
+							ImGui::TreePop();
+						}
+
+						ImGui::PopID();
+					};
+
+					for (auto& material : component.m_Mesh->m_Material)
+					{
+						std::string label = std::string("material") + std::to_string(matIndex);
+						ImGui::PushID(label.c_str());
+
+						if (ImGui::TreeNode((void*)label.c_str(), std::to_string(matIndex).c_str()))
+						{
+							materialNode("Albedo", material, material->mAlbedoMap, [](Ref<Material>& mat) {
+								ImGui::SameLine();
+								ImGui::Checkbox("Use", &mat->bUseAlbedoMap);
+
+								if (ImGui::ColorEdit4("##albedo", glm::value_ptr(mat->col)))
+								{
+									if (!mat->bUseAlbedoMap)
+									{
+										unsigned char data[4];
+										for (size_t i = 0; i < 4; i++)
+										{
+											data[i] = (unsigned char)(mat->col[i] * 255.0f);
+										}
+										mat->albedoRGBA->SetData(data, sizeof(unsigned char) * 4);
+									}
+								}
+								});
+
+							materialNode("Normal", material, material->mNormalMap, [](Ref<Material>& mat) {
+								ImGui::SameLine();
+								ImGui::Checkbox("Use", &mat->bUseNormalMap);
+								});
+
+							materialNode("Metallic", material, material->mMetallicMap, [](Ref<Material>& mat) {
+								ImGui::SameLine();
+
+								if (ImGui::BeginTable("Metallic", 1))
+								{
+									ImGui::TableNextRow();
+									ImGui::TableNextColumn();
+
+									ImGui::Checkbox("Use", &mat->bUseMetallicMap);
+
+									ImGui::TableNextRow();
+									ImGui::TableNextColumn();
+									if (ImGui::SliderFloat("##Metallic", &mat->metallic, 0.0f, 1.0f))
+									{
+										if (!mat->bUseMetallicMap)
+										{
+											unsigned char data[4];
+											for (size_t i = 0; i < 3; i++)
+											{
+												data[i] = (unsigned char)(mat->metallic * 255.0f);
+											}
+											data[3] = (unsigned char)255.0f;
+											mat->metallicRGBA->SetData(data, sizeof(unsigned char) * 4);
+										}
+									}
+
+									ImGui::EndTable();
+								}
+								});
+
+							materialNode("Roughness", material, material->mRoughnessMap, [](Ref<Material>& mat) {
+								ImGui::SameLine();
+
+								if (ImGui::BeginTable("Roughness", 1))
+								{
+									ImGui::TableNextRow();
+									ImGui::TableNextColumn();
+
+									ImGui::Checkbox("Use", &mat->bUseRoughnessMap);
+
+									ImGui::TableNextRow();
+									ImGui::TableNextColumn();
+									if (ImGui::SliderFloat("##Roughness", &mat->roughness, 0.0f, 1.0f))
+									{
+										if (!mat->bUseRoughnessMap)
+										{
+											unsigned char data[4];
+											for (size_t i = 0; i < 3; i++)
+											{
+												data[i] = (unsigned char)(mat->roughness * 255.0f);
+											}
+											data[3] = (unsigned char)255.0f;
+											mat->roughnessRGBA->SetData(data, sizeof(unsigned char) * 4);
+										}
+									}
+
+									ImGui::EndTable();
+								}
+								});
+
+							materialNode("Ambient Occlusion", material, material->mAoMap, [](Ref<Material>& mat) {
+								ImGui::SameLine();
+								ImGui::Checkbox("Use", &mat->bUseAoMap);
+								});
+
+							ImGui::TreePop();
+						}
+
+						matIndex++;
+
+						ImGui::PopID();
+					}
+
+					ImGui::TreePop();
+				}
+
+				if (component.m_Mesh->bAnimated)
+				{
+					if (ImGuiUtils::TreeNodeExStyle2((void*)"Animation", "Animation"))
+					{
+						ImGuiUtils::DrawTwoUI(
+							[&mesh = component.m_Mesh]() {
+							static std::string label = "Play";
+							if (ImGui::Button(label.c_str()))
+							{
+								mesh->bPlayAnim = !mesh->bPlayAnim;
+								if (mesh->bPlayAnim)
+									label = "Stop";
+								else
+								{
+									label = "Play";
+									mesh->m_Animator.Reset();
+								}
+							}
+						},
+							[&mesh = component.m_Mesh]() {
+							static std::string label = "Pause";
+							if (ImGui::Button(label.c_str()))
+							{
+								mesh->bStopAnim = !mesh->bStopAnim;
+								if (mesh->bStopAnim)
+									label = "Resume";
+								else
+									label = "Pause";
+							}
+						},
+							88.0f
+							);
+
+						ImGui::Columns(2, nullptr, false);
+						ImGui::Text("Speed");
+						ImGui::NextColumn();
+						ImGui::SliderFloat("##Speed", &component.m_Mesh->mAnimPlaySpeed, 0.1f, 10.0f);
+						ImGui::EndColumns();
+
+						ImGui::ProgressBar(component.m_Mesh->m_Animator.GetProgress(), ImVec2(0.0f, 0.0f));
+
+						ImGui::TreePop();
+					}
+				}
+			});
+
+			DrawComponent<PointLightComponent>("Point Light", entity, [](auto& component)
+				{
+					ImGuiUtils::DrawTwoUI(
+						[]() { ImGui::Text("Light Intensity"); },
+						[&component = component]() { ImGui::SliderFloat("##Light Intensity", &component.Intensity, 0.0f, 10000.0f, "%.1f"); }
+					);
+
+					ImGuiUtils::DrawTwoUI(
+						[]() { ImGui::Text("Light Color"); },
+						[&component = component]() { ImGui::ColorEdit3("##Light Color", (float*)&component.LightColor); }
+					);
+				});
+			DrawComponent<DirectionalLightComponent>("Directional Light", entity, [](auto& component)
+				{
+					ImGuiUtils::DrawTwoUI(
+						[]() { ImGui::Text("Light Intensity"); },
+						[&component = component]() { ImGui::SliderFloat("##Light Intensity", &component.Intensity, 0.0f, 10.0f, "%.2f"); }
+					);
+				});
 	}
 }

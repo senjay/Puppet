@@ -58,11 +58,26 @@ namespace Puppet {
     void Scene::OnRenderEditor(TimeStep ts, const EditorCamera& editorCamera)
     {
         SceneRenderer::BeginScene(this, {editorCamera, editorCamera.GetViewMatrix() });
-        auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-        for (auto entity : group)
         {
-            auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            SceneRenderer::SubmitMesh(transformComponent.Transform, sprite, (int)entity);
+            auto group = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
+            for (auto entity : group)
+            {
+                auto [sprite,transformComponent] = group.get<SpriteRendererComponent, TransformComponent>(entity);
+                SceneRenderer::SubmitMesh(transformComponent.GetTransform(), sprite, (int)entity);
+            }
+        }
+        {
+            auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
+            for (auto entity : group)
+            {
+                auto [transformComponent, meshComponent] = group.get<TransformComponent, MeshComponent>(entity);
+                if (meshComponent.m_Mesh)
+                {
+
+                    // TODO: Should we render (logically)
+                    SceneRenderer::SubmitMesh(transformComponent.GetTransform(), meshComponent, (int)entity);
+                }
+            }
         }
         SceneRenderer::EndScene();
     }
@@ -77,7 +92,7 @@ namespace Puppet {
             return;
         }
         SceneCamera& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
-        glm::mat4 cameraTransform = mainCameraEntity.GetComponent<TransformComponent>().Transform;
+        glm::mat4 cameraTransform = mainCameraEntity.GetComponent<TransformComponent>().GetTransform();
         // Update scripts
         {
             m_Registry.view<NativeScriptComponent>().each([this,&ts](auto entity, auto& nsc)
@@ -95,11 +110,24 @@ namespace Puppet {
         }
         
         SceneRenderer::BeginScene(this, { mainCamera,  glm::inverse(cameraTransform) });
-        auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+        auto group = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
         for (auto entity : group)
         {
-            auto [transformComponent, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-            SceneRenderer::SubmitMesh(transformComponent.Transform, sprite, (int)entity);
+            auto [sprite, transformComponent] = group.get<SpriteRendererComponent, TransformComponent>(entity);
+            SceneRenderer::SubmitMesh(transformComponent.GetTransform(), sprite, (int)entity);
+        }
+        {
+            auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
+            for (auto entity : group)
+            {
+                auto [transformComponent, meshComponent] = group.get<TransformComponent, MeshComponent>(entity);
+                if (meshComponent.m_Mesh)
+                {
+
+                    // TODO: Should we render (logically)
+                    SceneRenderer::SubmitMesh(transformComponent.GetTransform(), meshComponent, (int)entity);
+                }
+            }
         }
         SceneRenderer::EndScene();
     }
@@ -140,6 +168,20 @@ namespace Puppet {
 
     template<>
     void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
+    {
+    }
+
+    template<>
+    void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent& component)
+    {
+    }
+
+    template<>
+    void Scene::OnComponentAdded<PointLightComponent>(Entity entity, PointLightComponent& component)
+    {
+    }
+    template<>
+    void Scene::OnComponentAdded<DirectionalLightComponent>(Entity entity, DirectionalLightComponent& component)
     {
     }
 }

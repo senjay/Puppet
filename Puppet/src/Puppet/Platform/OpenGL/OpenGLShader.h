@@ -8,8 +8,8 @@ namespace Puppet
 	class OpenGLShader:public Shader
 	{
 	public:
-		OpenGLShader(const std::string& glslpath);
-		OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
+		OpenGLShader(const std::string& glslpath, bool isNative);
+		OpenGLShader(const std::string& name,const std::string& vertexSrc, const std::string& fragmentSrc);
 		~OpenGLShader();
 
 		virtual void Bind() const override;
@@ -34,10 +34,14 @@ namespace Puppet
 		void UploadUniformMat4(const std::string& name, const glm::mat4& matrix);
 	private:
 		std::string ReadFile(const std::string& glslpath);
-		std::unordered_map<GLenum,std::string> PreProcess(const std::string& source);
-		void Compile(const std::unordered_map<GLenum, std::string>&shaderSources);
+		void PreProcess(const std::string& source);
 		
-		void CompileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources);
+		void CreateNativeShader();
+		void CreateCrossShader();
+		
+		void Compile();
+		
+		void CompileOrGetVulkanBinaries();
 		void CompileOrGetOpenGLBinaries();
 		void CreateProgram();
 		void Reflect(GLenum stage, const std::vector<uint32_t>& shaderData);
@@ -48,7 +52,7 @@ namespace Puppet
 		std::unordered_map<GLenum, std::vector<uint32_t>> m_VulkanSPIRV;
 		std::unordered_map<GLenum, std::vector<uint32_t>> m_OpenGLSPIRV;
 
-		std::unordered_map<GLenum, std::string> m_OpenGLSourceCode;
+		std::unordered_map<GLenum, std::string> m_SourceCode;
 	};
 
 }

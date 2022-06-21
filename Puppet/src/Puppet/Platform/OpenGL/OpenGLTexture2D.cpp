@@ -84,15 +84,23 @@ namespace Puppet {
 			glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		});
+		/*
+			如果在构造函数调用this构造侵入式指针，出了构造函数，该指针被delete
+			导致这样一个情况：该对象的指针在构造函数创建后被立马销毁，即外部无法获取该对象指针
+		bug触发条件：【回调函数在该构造函数未完成时就被调用】
+			当运行到此处，此时共有2个引用计数，一个在函数，一个在回调函数中，
+			如果回调函数中的立马被消费掉，则只剩一个引用计数，
+			而出了该构造函数，构造函数中的智能指针也析构，导致引用计数为0，则该对象直接被delete
+		*/
 		m_ImageData.Allocate(width * height * Texture::GetBPP(TextureFormat::RGBA));
 	}
 
 	OpenGLTexture2D::~OpenGLTexture2D()
 	{
 		PP_PROFILE_FUNCTION();
-		Ref<OpenGLTexture2D> instance = this;
-		Renderer::Submit([instance]() mutable {
-			glDeleteTextures(1, &instance->m_RendererID);
+		RendererID rid = m_RendererID;
+		Renderer::Submit([rid](){
+			glDeleteTextures(1, &rid);
 		});
 	}
 
