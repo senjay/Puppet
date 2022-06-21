@@ -26,7 +26,7 @@ namespace Puppet{
 		virtual uint32_t GetHeight() const = 0;
 		virtual RendererID GetRendererID() const = 0;
 		virtual uint32_t GetMipLevelCount() const = 0;
-
+		virtual TextureFormat GetFormat() const = 0;
 		virtual void SetData(void* data, uint32_t size) = 0;
 		virtual void Bind(uint32_t slot = 0) const = 0;
 		
