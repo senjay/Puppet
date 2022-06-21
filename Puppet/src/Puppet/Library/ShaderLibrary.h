@@ -15,8 +15,8 @@ namespace Puppet {
 		void Init();
 	protected:
 		ShaderLibrary();
-		Ref<Shader> Load(const std::string& filepath, bool isGLNative);
-		Ref<Shader> Load(const std::string& name, const std::string& filepath, bool isGLNative);
+		Ref<Shader> Load(const std::string& filepath);
+		Ref<Shader> Load(const std::string& name, const std::string& filepath);
 	private:
 		void Add(const Ref<Shader>& shader);
 	private:

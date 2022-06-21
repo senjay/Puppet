@@ -46,12 +46,12 @@ namespace Puppet {
 		Add("DefaultHdr", Texture2D::Create("./assets/textures/DefaultTexture.png"));
 		Add("BRDF_LUT", Texture2D::Create("./assets/textures/BRDF_LUT.tga"));
 
-		Ref<Texture2D>WhiteTexture = Texture2D::Create(1, 1);
+		Ref<Texture2D>WhiteTexture = Texture2D::Create(TextureFormat::RGBA,1, 1);
 		uint32_t whiteTextureData = 0xffffffff;
 		WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 		Add("WhiteTexture", WhiteTexture);
 
-		Ref<Texture2D> BlackTexture = Texture2D::Create(1, 1);
+		Ref<Texture2D> BlackTexture = Texture2D::Create(TextureFormat::RGBA, 1, 1);
 		uint32_t blackTextureData = 0x00000000;
 		BlackTexture->SetData(&blackTextureData, sizeof(uint32_t));
 		Add("BlackTexture", BlackTexture);

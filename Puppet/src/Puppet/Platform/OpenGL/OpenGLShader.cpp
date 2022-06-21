@@ -78,98 +78,213 @@ namespace Puppet
 			PP_CORE_ASSERT(false);
 			return "";
 		}
+
+		// Parsing helper functions
+		const char* FindToken(const char* str, const std::string& token)
+		{
+			const char* t = str;
+			while (t = strstr(t, token.c_str()))
+			{
+				bool left = str == t || isspace(t[-1]);
+				bool right = !t[token.size()] || isspace(t[token.size()]);
+				if (left && right)
+					return t;
+
+				t += token.size();
+			}
+			return nullptr;
+		}
+
+		const char* FindToken(const std::string& string, const std::string& token)
+		{
+			return FindToken(string.c_str(), token);
+		}
+
+		std::vector<std::string> SplitString(const std::string& string, const std::string& delimiters)
+		{
+			size_t start = 0;
+			size_t end = string.find_first_of(delimiters);
+
+			std::vector<std::string> result;
+
+			while (end <= std::string::npos)
+			{
+				std::string token = string.substr(start, end - start);
+				if (!token.empty())
+					result.push_back(token);
+
+				if (end == std::string::npos)
+					break;
+
+				start = end + 1;
+				end = string.find_first_of(delimiters, start);
+			}
+
+			return result;
+		}
+
+		std::vector<std::string> SplitString(const std::string& string, const char delimiter)
+		{
+			return SplitString(string, std::string(1, delimiter));
+		}
+
+		std::vector<std::string> Tokenize(const std::string& string)
+		{
+			return SplitString(string, " \t\n\r");
+		}
+
+		std::vector<std::string> GetLines(const std::string& string)
+		{
+			return SplitString(string, "\n");
+		}
+
+		std::string GetBlock(const char* str, const char** outPosition)
+		{
+			const char* end = strstr(str, "}");
+			if (!end)
+				return str;
+
+			if (outPosition)
+				*outPosition = end;
+			uint32_t length = end - str + 1;
+			return std::string(str, length);
+		}
+
+		std::string GetStatement(const char* str, const char** outPosition)
+		{
+			const char* end = strstr(str, ";");
+			if (!end)
+				return str;
+
+			if (outPosition)
+				*outPosition = end;
+			uint32_t length = end - str + 1;
+			return std::string(str, length);
+		}
+
+		bool StartsWith(const std::string& string, const std::string& start)
+		{
+			return string.find(start) == 0;
+		}
+
+		bool IsTypeStringResource(const std::string& type)
+		{
+			if (type == "sampler1D")		return true;
+			if (type == "sampler2D")		return true;
+			if (type == "sampler2DMS")		return true;
+			if (type == "samplerCube")		return true;
+			if (type == "sampler2DShadow")	return true;
+			return false;
+		}
+
 	}
 
-	static GLenum ShaderTypeFromString(std::string& type)
+	OpenGLShader::OpenGLShader(const std::string& filepath)
+		: m_FilePath(filepath)
 	{
-		if (type == "vertex")
-			return GL_VERTEX_SHADER;
-
-		if (type == "fragment"|| type == "pixel")
-			return GL_FRAGMENT_SHADER;
-
-		PP_CORE_ASSERT(false,"Unknow Shader Type!");
-
-		return 0;
+		
+		std::filesystem::path path = m_FilePath;
+		m_Name = path.stem().string();
+		
+		Reload();
 	}
 
-	OpenGLShader::OpenGLShader(const std::string& glslpath, bool isNative)
-		: m_FilePath(glslpath)
+	void OpenGLShader::Reload()
 	{
-		PP_PROFILE_FUNCTION();
-		if (isNative)
-			CreateNativeShader();
-		else
-			CreateCrossShader();
-		//Utils::CreateCacheDirectoryIfNeeded();
+		std::string source = ReadFile(m_FilePath);
+		PreProcess(source);
+		if (!m_IsCompute)
+			Parse();
 
-		//std::filesystem::path path = glslpath;
-		//m_Name =path.stem().string();
-		//std::string source=ReadFile(glslpath);
-		//auto shaderSources = PreProcess(source);
-		//{
-		//	Timer timer;
-		//	CompileOrGetVulkanBinaries(shaderSources);
-		//	CompileOrGetOpenGLBinaries();
-		//	CreateProgram();
-		//	PP_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
-		//}
-	}
-	OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc)
-		:m_Name(name)
-	{
-		PP_PROFILE_FUNCTION();
 
-		std::unordered_map<GLenum, std::string> shaderSources{
-			{GL_VERTEX_SHADER,vertexSrc},
-			{GL_FRAGMENT_SHADER,fragmentSrc}
-		};
-		CompileOrGetVulkanBinaries();
-		CompileOrGetOpenGLBinaries();
-		CreateProgram();
+		if (m_RendererID)
+			glDeleteProgram(m_RendererID);
+
+		CompileAndUploadShader();
+		if (!m_IsCompute)
+		{
+			ResolveUniforms();
+			ValidateUniforms();
+		}
+
+		if (m_Loaded)
+		{
+			for (auto& callback : m_ShaderReloadedCallbacks)
+				callback();
+		}
+
+		m_Loaded = true;
 	}
-	
-	
+
 	OpenGLShader::~OpenGLShader()
 	{
-		PP_PROFILE_FUNCTION();
-
 		RendererID rid = m_RendererID;
 		Renderer::Submit([rid]() {
 			glDeleteProgram(rid);
 		});
 	}
+
+	void OpenGLShader::AddShaderReloadedCallback(const ShaderReloadedCallback& callback)
+	{
+		m_ShaderReloadedCallbacks.push_back(callback);
+	}
 	void OpenGLShader::Bind() const
 	{
-		PP_PROFILE_FUNCTION();
-		Ref<const OpenGLShader> instance = this;
-		Renderer::Submit([instance]()mutable {
-			glUseProgram(instance->m_RendererID);
+
+		Renderer::Submit([rid=m_RendererID](){
+			glUseProgram(rid);
 		});
 	}
 	void OpenGLShader::UnBind() const
 	{
-		PP_PROFILE_FUNCTION();
 
 		Renderer::Submit([]() {
 			glUseProgram(0);
 		});
 	}
 
+	void OpenGLShader::SetVSMaterialUniformBuffer(Buffer buffer)
+	{
+
+		Renderer::Submit([instance = Ref <OpenGLShader>(this),buffer]()mutable {
+			glUseProgram(instance->m_RendererID);
+			instance->ResolveAndSetUniforms(instance->m_VSMaterialUniformBuffer, buffer);
+		});
+	}
+
+	void OpenGLShader::SetPSMaterialUniformBuffer(Buffer buffer)
+	{
+
+		Renderer::Submit([instance = Ref <OpenGLShader>(this), buffer]()mutable {
+			glUseProgram(instance->m_RendererID);
+			instance->ResolveAndSetUniforms(instance->m_PSMaterialUniformBuffer, buffer);
+		});
+	}
+
 	void OpenGLShader::SetInt(const std::string& name, int value)
 	{
 		PP_PROFILE_FUNCTION();
-		Renderer::Submit([=](){
-			UploadUniformInt(name, value);
+
+		Renderer::Submit([instance = Ref <OpenGLShader>(this), name,value]()mutable {
+			instance->UploadUniformInt(name, value);
 		});
 	}
 
 	void OpenGLShader::SetIntArray(const std::string& name, int* values, uint32_t count)
 	{
 		PP_PROFILE_FUNCTION();
-		//TODO: =copy have problem?
-		Renderer::Submit([=]() {
-			UploadUniformIntArray(name, values, count);
+		int* copy = new int[count];
+		memcpy(copy, values, sizeof(int) * count);
+		Renderer::Submit([instance= Ref <OpenGLShader>(this),name, copy,count]()mutable {
+			instance->UploadUniformIntArray(name, copy, count);
+			delete[] copy;
+		});
+	}
+
+	void OpenGLShader::SetBool(const std::string& name, bool value)
+	{
+		Renderer::Submit([instance = Ref <OpenGLShader>(this),name,value]()mutable {
+			instance->UploadUniformInt(name, value);
 		});
 	}
 
@@ -177,26 +292,26 @@ namespace Puppet
 	{
 		PP_PROFILE_FUNCTION();
 
-		Renderer::Submit([=]() {
-			UploadUniformFloat(name, value);
-			});
+		Renderer::Submit([instance = Ref <OpenGLShader>(this),name,value]()mutable {
+			instance->UploadUniformFloat(name, value);
+		});
 	}
 
 	void OpenGLShader::SetFloat2(const std::string& name, const glm::vec2& value)
 	{
 		PP_PROFILE_FUNCTION();
 
-		Renderer::Submit([=]() {
-			UploadUniformFloat2(name, value);
-			});
+		Renderer::Submit([instance = Ref <OpenGLShader>(this), name, value]()mutable {
+			instance->UploadUniformFloat2(name, value);
+		});
 	}
 
 	void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value)
 	{
 		PP_PROFILE_FUNCTION();
 
-		Renderer::Submit([=]() {
-			UploadUniformFloat3(name, value);
+		Renderer::Submit([instance = Ref <OpenGLShader>(this), name, value]()mutable {
+			instance->UploadUniformFloat3(name, value);
 			});
 	}
 
@@ -205,8 +320,8 @@ namespace Puppet
 		PP_PROFILE_FUNCTION();
 
 
-		Renderer::Submit([=]() {
-			UploadUniformFloat4(name, value);
+		Renderer::Submit([instance = Ref <OpenGLShader>(this), name, value]()mutable {
+			instance->UploadUniformFloat4(name, value);
 			});
 	}
 
@@ -214,50 +329,63 @@ namespace Puppet
 	{
 		PP_PROFILE_FUNCTION();
 		
-		Renderer::Submit([=]() {
-			UploadUniformMat4(name, value);
+		Renderer::Submit([instance = Ref <OpenGLShader>(this), name, value]()mutable {
+			instance->UploadUniformMat4(name, value);
 			});
 
+	}
+
+	void OpenGLShader::SetMat4FromRenderThread(const std::string& name, const glm::mat4& value, bool bind)
+	{
+		if (bind)
+		{
+			UploadUniformMat4(name, value);
+		}
+		else
+		{
+			int location = GetUniformLocation(name);
+			UploadUniformMat4(location, value);
+		}
 	}
 	 
 	void OpenGLShader::UploadUniformInt(const std::string& name, int value)
 	{
-		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+		GLint location = GetUniformLocation(name);
 		glUniform1i(location, value);
 	}
 
 	void OpenGLShader::UploadUniformIntArray(const std::string& name, int* values, uint32_t count)
 	{
-		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+		GLint location = GetUniformLocation(name);
 		glUniform1iv(location, count, values);
 	}
 
 	void OpenGLShader::UploadUniformFloat(const std::string& name, float value)
 	{
-		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+		GLint location = GetUniformLocation(name);
 		glUniform1f(location, value);
 	}
 
 	void OpenGLShader::UploadUniformFloat2(const std::string& name, const glm::vec2& value)
 	{
-		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+		GLint location = GetUniformLocation(name);
 		glUniform2f(location, value.x, value.y);
 	}
 
 	void OpenGLShader::UploadUniformFloat3(const std::string& name, const glm::vec3& value)
 	{
-		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+		GLint location = GetUniformLocation(name);
 		glUniform3f(location, value.x, value.y, value.z);
 	}
 
 	void OpenGLShader::UploadUniformFloat4(const std::string& name, const glm::vec4& value)
 	{
-		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+		GLint location = GetUniformLocation(name);
 		glUniform4f(location, value.x, value.y, value.z, value.w);
 	}
 	void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix)
 	{
-		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+		GLint location = GetUniformLocation(name);
 		glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 	}
 
@@ -265,11 +393,9 @@ namespace Puppet
 
 	void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix)
 	{
-		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+		GLint location = GetUniformLocation(name);
 		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 	}
-
-
 
 
 	std::string OpenGLShader::ReadFile(const std::string& glslpath)
@@ -311,293 +437,553 @@ namespace Puppet
 			PP_CORE_ASSERT(eol != std::string::npos, "Syntax error");
 			size_t begin = pos + typeTokenLength + 1; //Start of shader type name (after "#type " keyword)
 			std::string type = source.substr(begin, eol - begin);
-			PP_CORE_ASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
+			PP_CORE_ASSERT(Utils::ShaderTypeFromString(type), "Invalid shader type specified");
 
 			size_t nextLinePos = source.find_first_not_of("\r\n", eol); //Start of shader code after shader type declaration line
 			PP_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
 			pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
-
-			m_SourceCode[ShaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
+			
+			auto shaderType = Utils::ShaderTypeFromString(type);
+			m_SourceCode[shaderType] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
+		
+			// Compute shaders cannot contain other types
+			if (shaderType == GL_COMPUTE_SHADER)
+			{
+				m_IsCompute = true;
+				break;
+			}
 		}
 	}
 
-	void OpenGLShader::CreateNativeShader()
+	void OpenGLShader::Parse()
 	{
-		Utils::CreateCacheDirectoryIfNeeded();
-		std::filesystem::path path = m_FilePath;
-		m_Name = path.stem().string();
-		std::string source = ReadFile(m_FilePath);
-		PreProcess(source);
-		Compile();
-		//{
-		//	Timer timer;
-		//	//CompileOrGetVulkanBinaries(shaderSources);
-		//	CompileOrGetOpenGLBinaries();
-		//	CreateProgram();
-		//	PP_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
-		//}
+		const char* token;
+		const char* vstr;
+		const char* fstr;
+
+		m_Resources.clear();
+		m_Structs.clear();
+		m_VSMaterialUniformBuffer.Reset();
+		m_PSMaterialUniformBuffer.Reset();
+
+		auto& vertexSource = m_SourceCode[GL_VERTEX_SHADER];
+		auto& fragmentSource = m_SourceCode[GL_FRAGMENT_SHADER];
+
+		// Vertex Shader
+		vstr = vertexSource.c_str();
+		while (token = Utils::FindToken(vstr, "struct"))
+			ParseUniformStruct(Utils::GetBlock(token, &vstr), ShaderDomain::Vertex);
+
+		vstr = vertexSource.c_str();
+		while (token = Utils::FindToken(vstr, "uniform"))
+			ParseUniform(Utils::GetStatement(token, &vstr), ShaderDomain::Vertex);
+
+		// Fragment Shader
+		fstr = fragmentSource.c_str();
+		while (token = Utils::FindToken(fstr, "struct"))
+			ParseUniformStruct(Utils::GetBlock(token, &fstr), ShaderDomain::Pixel);
+
+		fstr = fragmentSource.c_str();
+		while (token = Utils::FindToken(fstr, "uniform"))
+			ParseUniform(Utils::GetStatement(token, &fstr), ShaderDomain::Pixel);
 	}
 
-	void OpenGLShader::CreateCrossShader()
+	void OpenGLShader::ParseUniform(const std::string& statement, ShaderDomain domain)
 	{
-		Utils::CreateCacheDirectoryIfNeeded();
-		std::filesystem::path path = m_FilePath;
-		m_Name = path.stem().string();
-		std::string source = ReadFile(m_FilePath);
-		PreProcess(source);
+		std::vector<std::string> tokens = Utils::Tokenize(statement);
+		uint32_t index = 0;
+
+		index++; // "uniform"
+		std::string typeString = tokens[index++];
+		std::string name = tokens[index++];
+		// Strip ; from name if present
+		if (const char* s = strstr(name.c_str(), ";"))
+			name = std::string(name.c_str(), s - name.c_str());
+
+		std::string n(name);
+		int32_t count = 1;
+		const char* namestr = n.c_str();
+		if (const char* s = strstr(namestr, "["))
 		{
-			Timer timer;
-			CompileOrGetVulkanBinaries();
-			CompileOrGetOpenGLBinaries();
-			CreateProgram();
-			PP_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
+			name = std::string(namestr, s - namestr);
+
+			const char* end = strstr(namestr, "]");
+			std::string c(s + 1, end - s);
+			count = atoi(c.c_str());
+		}
+
+		if (Utils::IsTypeStringResource(typeString))
+		{
+			ShaderResourceDeclaration* declaration = new OpenGLShaderResourceDeclaration(OpenGLShaderResourceDeclaration::StringToType(typeString), name, count);
+			m_Resources.push_back(declaration);
+		}
+		else
+		{
+			OpenGLShaderUniformDeclaration::Type t = OpenGLShaderUniformDeclaration::StringToType(typeString);
+			OpenGLShaderUniformDeclaration* declaration = nullptr;
+
+			if (t == OpenGLShaderUniformDeclaration::Type::NONE)
+			{
+				// Find struct
+				ShaderStruct* s = FindStruct(typeString);
+				PP_CORE_ASSERT(s, "");
+				declaration = new OpenGLShaderUniformDeclaration(domain, s, name, count);
+			}
+			else
+			{
+				declaration = new OpenGLShaderUniformDeclaration(domain, t, name, count);
+			}
+
+			if (Utils::StartsWith(name, "r_"))
+			{
+				if (domain == ShaderDomain::Vertex)
+					((OpenGLShaderUniformBufferDeclaration*)m_VSRendererUniformBuffers.front())->PushUniform(declaration);
+				else if (domain == ShaderDomain::Pixel)
+					((OpenGLShaderUniformBufferDeclaration*)m_PSRendererUniformBuffers.front())->PushUniform(declaration);
+			}
+			else
+			{
+				if (domain == ShaderDomain::Vertex)
+				{
+					if (!m_VSMaterialUniformBuffer)
+						m_VSMaterialUniformBuffer.Reset(new OpenGLShaderUniformBufferDeclaration("", domain));
+
+					m_VSMaterialUniformBuffer->PushUniform(declaration);
+				}
+				else if (domain == ShaderDomain::Pixel)
+				{
+					if (!m_PSMaterialUniformBuffer)
+						m_PSMaterialUniformBuffer.Reset(new OpenGLShaderUniformBufferDeclaration("", domain));
+
+					m_PSMaterialUniformBuffer->PushUniform(declaration);
+				}
+			}
 		}
 	}
 
-	void OpenGLShader::Compile()
+	void OpenGLShader::ParseUniformStruct(const std::string& block, ShaderDomain domain)
 	{
+		std::vector<std::string> tokens = Utils::Tokenize(block);
+
+		uint32_t index = 0;
+		index++; // struct
+		std::string name = tokens[index++];
+		ShaderStruct* uniformStruct = new ShaderStruct(name);
+		index++; // {
+		while (index < tokens.size())
+		{
+			if (tokens[index] == "}")
+				break;
+
+			std::string type = tokens[index++];
+			std::string name = tokens[index++];
+
+			// Strip ; from name if present
+			if (const char* s = strstr(name.c_str(), ";"))
+				name = std::string(name.c_str(), s - name.c_str());
+
+			uint32_t count = 1;
+			const char* namestr = name.c_str();
+			if (const char* s = strstr(namestr, "["))
+			{
+				name = std::string(namestr, s - namestr);
+
+				const char* end = strstr(namestr, "]");
+				std::string c(s + 1, end - s);
+				count = atoi(c.c_str());
+			}
+			ShaderUniformDeclaration* field = new OpenGLShaderUniformDeclaration(domain, OpenGLShaderUniformDeclaration::StringToType(type), name, count);
+			uniformStruct->AddField(field);
+		}
+		m_Structs.push_back(uniformStruct);
+	}
+
+	ShaderStruct* OpenGLShader::FindStruct(const std::string& name)
+	{
+		for (ShaderStruct* s : m_Structs)
+		{
+			if (s->GetName() == name)
+				return s;
+		}
+		return nullptr;
+	}
+
+	int32_t OpenGLShader::GetUniformLocation(const std::string& name) const
+	{
+		int32_t result = glGetUniformLocation(m_RendererID, name.c_str());
+		if (result == -1)
+			PP_CORE_WARN("Could not find uniform '{0}' in shader", name);
+
+		return result;
+	}
+
+	void OpenGLShader::CompileAndUploadShader()
+	{
+		std::vector<GLuint> shaderRendererIDs;
+
 		GLuint program = glCreateProgram();
-		std::vector<GLuint> glShaderIDs;
-		glShaderIDs.reserve(m_SourceCode.size());
-		for (auto&& [type, source] : m_SourceCode)
+		for (auto& kv : m_SourceCode)
 		{
-			// Create an empty vertex shader handle
-			GLuint shader = glCreateShader(type);
+			GLenum type = kv.first;
+			std::string& source = kv.second;
 
-			// Send the vertex shader source code to GL
-			// Note that std::string's .c_str is NULL character terminated.
-			const GLchar* sourceCStr = source.c_str();
-			glShaderSource(shader, 1, &sourceCStr, 0);
+			GLuint shaderRendererID = glCreateShader(type);
+			const GLchar* sourceCstr = (const GLchar*)source.c_str();
+			glShaderSource(shaderRendererID, 1, &sourceCstr, 0);
 
-			// Compile the vertex shader
-			glCompileShader(shader);
+			glCompileShader(shaderRendererID);
 
-			// ¶¥µã×ÅÉ«Æ÷±àÒë×´Ì¬
 			GLint isCompiled = 0;
-			glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+			glGetShaderiv(shaderRendererID, GL_COMPILE_STATUS, &isCompiled);
 			if (isCompiled == GL_FALSE)
 			{
 				GLint maxLength = 0;
-				glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+				glGetShaderiv(shaderRendererID, GL_INFO_LOG_LENGTH, &maxLength);
 
 				// The maxLength includes the NULL character
 				std::vector<GLchar> infoLog(maxLength);
-				glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
+				glGetShaderInfoLog(shaderRendererID, maxLength, &maxLength, &infoLog[0]);
 
-				// We don't need the shader anymore
-				glDeleteShader(shader);
+				PP_CORE_ERROR("Shader compilation failed ({0}):\n{1}", m_FilePath, &infoLog[0]);
 
-				PP_CORE_ERROR("{0}", infoLog.data());
-				PP_CORE_ASSERT(false, "shader compilation failure!");
-				break;
+				// We don't need the shader anymore.
+				glDeleteShader(shaderRendererID);
+
+				PP_CORE_ASSERT(false, "Failed");
 			}
-			glShaderIDs.emplace_back(shader);
-			glAttachShader(program, shader);
-		}
 
-		m_RendererID=program;
+			shaderRendererIDs.push_back(shaderRendererID);
+			glAttachShader(program, shaderRendererID);
+		}
 
 		// Link our program
 		glLinkProgram(program);
 
-		// Note the different functions here: glGetProgram* instead of glGetShader*
+		// Note the different functions here: glGetProgram* instead of glGetShader*.
 		GLint isLinked = 0;
-		glGetProgramiv(m_RendererID, GL_LINK_STATUS, (int*)&isLinked);
+		glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
 		if (isLinked == GL_FALSE)
 		{
 			GLint maxLength = 0;
-			glGetProgramiv(m_RendererID, GL_INFO_LOG_LENGTH, &maxLength);
+			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
 
 			// The maxLength includes the NULL character
 			std::vector<GLchar> infoLog(maxLength);
-			glGetShaderInfoLog(m_RendererID, maxLength, &maxLength, &infoLog[0]);
+			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+			PP_CORE_ERROR("Shader linking failed ({0}):\n{1}", m_FilePath, &infoLog[0]);
 
 			// We don't need the program anymore.
-			glDeleteProgram(m_RendererID);
-			// Don't leak shaders either.
-			for(auto id:glShaderIDs)
-				glDeleteShader(id);
-
-			PP_CORE_ERROR("{0}", infoLog.data());
-			PP_CORE_ASSERT(false, "Shader link failure!");
-			return;
-		}
-		// Always detach shaders after a successful link.
-		for (auto id : glShaderIDs)
-			glDetachShader(m_RendererID, id);
-	}
-	
-	void OpenGLShader::CompileOrGetVulkanBinaries()
-	{
-		GLuint program = glCreateProgram();
-
-		shaderc::Compiler compiler;
-		shaderc::CompileOptions options;
-		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
-		const bool optimize = true;
-		if (optimize)
-			options.SetOptimizationLevel(shaderc_optimization_level_performance);
-
-		std::filesystem::path cacheDirectory = Utils::GetCacheDirectory();
-
-		m_VulkanSPIRV.clear();
-		for (auto&& [stage, source] : m_SourceCode)
-		{
-			std::filesystem::path shaderFilePath = m_FilePath;
-			std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + Utils::GLShaderStageCachedVulkanFileExtension(stage));
-
-			std::ifstream in(cachedPath, std::ios::in | std::ios::binary);
-			if (in.is_open())
-			{
-				in.seekg(0, std::ios::end);
-				auto size = in.tellg();
-				in.seekg(0, std::ios::beg);
-
-				auto& data = m_VulkanSPIRV[stage];
-				data.resize(size / sizeof(uint32_t));
-				in.read((char*)data.data(), size);
-			}
-			else
-			{
-				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_FilePath.c_str(), options);	
-				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-				{
-					PP_CORE_ERROR(module.GetErrorMessage());
-					PP_CORE_ASSERT(false);
-				}
-
-				m_VulkanSPIRV[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
-
-				std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
-				if (out.is_open())
-				{
-					auto& data = m_VulkanSPIRV[stage];
-					out.write((char*)data.data(), data.size() * sizeof(uint32_t));
-					out.flush();
-					out.close();
-				}
-			}
-		}
-
-		for (auto&& [stage, data] : m_VulkanSPIRV)
-			Reflect(stage, data);
-	}
-	void OpenGLShader::CompileOrGetOpenGLBinaries()
-	{
-		shaderc::Compiler compiler;
-		shaderc::CompileOptions options;
-		options.SetTargetEnvironment(shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
-		const bool optimize = false;
-		if (optimize)
-			options.SetOptimizationLevel(shaderc_optimization_level_performance);
-
-		std::filesystem::path cacheDirectory = Utils::GetCacheDirectory();
-
-		m_OpenGLSPIRV.clear();
-		m_SourceCode.clear();
-		for (auto&& [stage, spirv] : m_VulkanSPIRV)
-		{
-			std::filesystem::path shaderFilePath = m_FilePath;
-			std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + Utils::GLShaderStageCachedOpenGLFileExtension(stage));
-
-			std::ifstream in(cachedPath, std::ios::in | std::ios::binary);
-			if (in.is_open())
-			{
-				in.seekg(0, std::ios::end);
-				auto size = in.tellg();
-				in.seekg(0, std::ios::beg);
-
-				auto& data = m_OpenGLSPIRV[stage];
-				data.resize(size / sizeof(uint32_t));
-				in.read((char*)data.data(), size);
-			}
-			else
-			{
-				spirv_cross::CompilerGLSL glslCompiler(spirv);
-				m_SourceCode[stage] = glslCompiler.compile();
-				auto& source = m_SourceCode[stage];
-
-				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_FilePath.c_str());
-				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-				{
-					PP_CORE_ERROR(module.GetErrorMessage());
-					PP_CORE_ASSERT(false);
-				}
-
-				m_OpenGLSPIRV[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
-
-				std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
-				if (out.is_open())
-				{
-					auto& data = m_OpenGLSPIRV[stage];
-					out.write((char*)data.data(), data.size() * sizeof(uint32_t));
-					out.flush();
-					out.close();
-				}
-			}
-		}
-	}
-	void OpenGLShader::CreateProgram()
-	{
-		GLuint program = glCreateProgram();
-
-		std::vector<GLuint> shaderIDs;
-		for (auto&& [stage, spirv] : m_OpenGLSPIRV)
-		{
-			GLuint shaderID = shaderIDs.emplace_back(glCreateShader(stage));
-			glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), spirv.size() * sizeof(uint32_t));
-			glSpecializeShader(shaderID, "main", 0, nullptr, nullptr);
-			glAttachShader(program, shaderID);
-		}
-
-		glLinkProgram(program);
-
-		GLint isLinked;
-		glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-		if (isLinked == GL_FALSE)
-		{
-			GLint maxLength;
-			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-
-			std::vector<GLchar> infoLog(maxLength);
-			glGetProgramInfoLog(program, maxLength, &maxLength, infoLog.data());
-			PP_CORE_ERROR("Shader linking failed ({0}):\n{1}", m_FilePath, infoLog.data());
-
 			glDeleteProgram(program);
-
-			for (auto id : shaderIDs)
+			// Don't leak shaders either.
+			for (auto id : shaderRendererIDs)
 				glDeleteShader(id);
 		}
 
-		for (auto id : shaderIDs)
-		{
+		// Always detach shaders after a successful link.
+		for (auto id : shaderRendererIDs)
 			glDetachShader(program, id);
-			glDeleteShader(id);
-		}
 
 		m_RendererID = program;
 	}
-	void OpenGLShader::Reflect(GLenum stage, const std::vector<uint32_t>& shaderData)
+	void OpenGLShader::ResolveUniforms()
 	{
-		spirv_cross::Compiler compiler(shaderData);
-		spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+		glUseProgram(m_RendererID);
 
-		PP_CORE_TRACE("OpenGLShader::Reflect - {0} {1}", Utils::GLShaderStageToString(stage), m_FilePath);
-		PP_CORE_TRACE("    {0} uniform buffers", resources.uniform_buffers.size());
-		PP_CORE_TRACE("    {0} resources", resources.sampled_images.size());
-
-		PP_CORE_TRACE("Uniform buffers:");
-		for (const auto& resource : resources.uniform_buffers)
+		for (size_t i = 0; i < m_VSRendererUniformBuffers.size(); i++)
 		{
-			const auto& bufferType = compiler.get_type(resource.base_type_id);
-			uint32_t bufferSize = compiler.get_declared_struct_size(bufferType);
-			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-			int memberCount = bufferType.member_types.size();
-
-			PP_CORE_TRACE("  {0}", resource.name);
-			PP_CORE_TRACE("    Size = {0}", bufferSize);
-			PP_CORE_TRACE("    Binding = {0}", binding);
-			PP_CORE_TRACE("    Members = {0}", memberCount);
+			OpenGLShaderUniformBufferDeclaration* decl = (OpenGLShaderUniformBufferDeclaration*)m_VSRendererUniformBuffers[i];
+			const ShaderUniformList& uniforms = decl->GetUniformDeclarations();
+			for (size_t j = 0; j < uniforms.size(); j++)
+			{
+				OpenGLShaderUniformDeclaration* uniform = (OpenGLShaderUniformDeclaration*)uniforms[j];
+				if (uniform->GetType() == OpenGLShaderUniformDeclaration::Type::STRUCT)
+				{
+					const ShaderStruct& s = uniform->GetShaderUniformStruct();
+					const auto& fields = s.GetFields();
+					for (size_t k = 0; k < fields.size(); k++)
+					{
+						OpenGLShaderUniformDeclaration* field = (OpenGLShaderUniformDeclaration*)fields[k];
+						field->m_Location = GetUniformLocation(uniform->m_Name + "." + field->m_Name);
+					}
+				}
+				else
+				{
+					uniform->m_Location = GetUniformLocation(uniform->m_Name);
+				}
+			}
 		}
+
+		for (size_t i = 0; i < m_PSRendererUniformBuffers.size(); i++)
+		{
+			OpenGLShaderUniformBufferDeclaration* decl = (OpenGLShaderUniformBufferDeclaration*)m_PSRendererUniformBuffers[i];
+			const ShaderUniformList& uniforms = decl->GetUniformDeclarations();
+			for (size_t j = 0; j < uniforms.size(); j++)
+			{
+				OpenGLShaderUniformDeclaration* uniform = (OpenGLShaderUniformDeclaration*)uniforms[j];
+				if (uniform->GetType() == OpenGLShaderUniformDeclaration::Type::STRUCT)
+				{
+					const ShaderStruct& s = uniform->GetShaderUniformStruct();
+					const auto& fields = s.GetFields();
+					for (size_t k = 0; k < fields.size(); k++)
+					{
+						OpenGLShaderUniformDeclaration* field = (OpenGLShaderUniformDeclaration*)fields[k];
+						field->m_Location = GetUniformLocation(uniform->m_Name + "." + field->m_Name);
+					}
+				}
+				else
+				{
+					uniform->m_Location = GetUniformLocation(uniform->m_Name);
+				}
+			}
+		}
+
+		{
+			const auto& decl = m_VSMaterialUniformBuffer;
+			if (decl)
+			{
+				const ShaderUniformList& uniforms = decl->GetUniformDeclarations();
+				for (size_t j = 0; j < uniforms.size(); j++)
+				{
+					OpenGLShaderUniformDeclaration* uniform = (OpenGLShaderUniformDeclaration*)uniforms[j];
+					if (uniform->GetType() == OpenGLShaderUniformDeclaration::Type::STRUCT)
+					{
+						const ShaderStruct& s = uniform->GetShaderUniformStruct();
+						const auto& fields = s.GetFields();
+						for (size_t k = 0; k < fields.size(); k++)
+						{
+							OpenGLShaderUniformDeclaration* field = (OpenGLShaderUniformDeclaration*)fields[k];
+							field->m_Location = GetUniformLocation(uniform->m_Name + "." + field->m_Name);
+						}
+					}
+					else
+					{
+						uniform->m_Location = GetUniformLocation(uniform->m_Name);
+					}
+				}
+			}
+		}
+
+		{
+			const auto& decl = m_PSMaterialUniformBuffer;
+			if (decl)
+			{
+				const ShaderUniformList& uniforms = decl->GetUniformDeclarations();
+				for (size_t j = 0; j < uniforms.size(); j++)
+				{
+					OpenGLShaderUniformDeclaration* uniform = (OpenGLShaderUniformDeclaration*)uniforms[j];
+					if (uniform->GetType() == OpenGLShaderUniformDeclaration::Type::STRUCT)
+					{
+						const ShaderStruct& s = uniform->GetShaderUniformStruct();
+						const auto& fields = s.GetFields();
+						for (size_t k = 0; k < fields.size(); k++)
+						{
+							OpenGLShaderUniformDeclaration* field = (OpenGLShaderUniformDeclaration*)fields[k];
+							field->m_Location = GetUniformLocation(uniform->m_Name + "." + field->m_Name);
+						}
+					}
+					else
+					{
+						uniform->m_Location = GetUniformLocation(uniform->m_Name);
+					}
+				}
+			}
+		}
+
+		uint32_t sampler = 0;
+		for (size_t i = 0; i < m_Resources.size(); i++)
+		{
+			OpenGLShaderResourceDeclaration* resource = (OpenGLShaderResourceDeclaration*)m_Resources[i];
+			int32_t location = GetUniformLocation(resource->m_Name);
+
+			if (resource->GetCount() == 1)
+			{
+				resource->m_Register = sampler;
+				if (location != -1)
+					UploadUniformInt(location, sampler);
+
+				sampler++;
+			}
+			else if (resource->GetCount() > 1)
+			{
+				resource->m_Register = sampler;
+				uint32_t count = resource->GetCount();
+				int* samplers = new int[count];
+				for (uint32_t s = 0; s < count; s++)
+					samplers[s] = sampler++;
+				UploadUniformIntArray(resource->GetName(), samplers, count);
+				delete[] samplers;
+			}
+		}
+	}
+	void OpenGLShader::ValidateUniforms()
+	{
+	}
+	void OpenGLShader::ResolveAndSetUniforms(const Ref<OpenGLShaderUniformBufferDeclaration>& decl, Buffer buffer)
+	{
+		const ShaderUniformList& uniforms = decl->GetUniformDeclarations();
+		for (size_t i = 0; i < uniforms.size(); i++)
+		{
+			OpenGLShaderUniformDeclaration* uniform = (OpenGLShaderUniformDeclaration*)uniforms[i];
+			if (uniform->IsArray())
+				ResolveAndSetUniformArray(uniform, buffer);
+			else
+				ResolveAndSetUniform(uniform, buffer);
+		}
+	}
+	void OpenGLShader::ResolveAndSetUniform(OpenGLShaderUniformDeclaration* uniform, Buffer buffer)
+	{
+		if (uniform->GetLocation() == -1)
+			return;
+
+		PP_CORE_ASSERT(uniform->GetLocation() != -1, "Uniform has invalid location!");
+
+		uint32_t offset = uniform->GetOffset();
+		switch (uniform->GetType())
+		{
+		case OpenGLShaderUniformDeclaration::Type::BOOL:
+			UploadUniformFloat(uniform->GetLocation(), *(bool*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::FLOAT32:
+			UploadUniformFloat(uniform->GetLocation(), *(float*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::INT32:
+			UploadUniformInt(uniform->GetLocation(), *(int32_t*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC2:
+			UploadUniformFloat2(uniform->GetLocation(), *(glm::vec2*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC3:
+			UploadUniformFloat3(uniform->GetLocation(), *(glm::vec3*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC4:
+			UploadUniformFloat4(uniform->GetLocation(), *(glm::vec4*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::MAT3:
+			UploadUniformMat3(uniform->GetLocation(), *(glm::mat3*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::MAT4:
+			UploadUniformMat4(uniform->GetLocation(), *(glm::mat4*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::STRUCT:
+			UploadUniformStruct(uniform, buffer.Data, offset);
+			break;
+		default:
+			PP_CORE_ASSERT(false, "Unknown uniform type!");
+		}
+	}
+	void OpenGLShader::ResolveAndSetUniformArray(OpenGLShaderUniformDeclaration* uniform, Buffer buffer)
+	{
+		uint32_t offset = uniform->GetOffset();
+		switch (uniform->GetType())
+		{
+		case OpenGLShaderUniformDeclaration::Type::BOOL:
+			UploadUniformFloat(uniform->GetLocation(), *(bool*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::FLOAT32:
+			UploadUniformFloat(uniform->GetLocation(), *(float*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::INT32:
+			UploadUniformInt(uniform->GetLocation(), *(int32_t*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC2:
+			UploadUniformFloat2(uniform->GetLocation(), *(glm::vec2*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC3:
+			UploadUniformFloat3(uniform->GetLocation(), *(glm::vec3*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC4:
+			UploadUniformFloat4(uniform->GetLocation(), *(glm::vec4*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::MAT3:
+			UploadUniformMat3(uniform->GetLocation(), *(glm::mat3*)&buffer.Data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::MAT4:
+			UploadUniformMat4Array(uniform->GetLocation(), *(glm::mat4*)&buffer.Data[offset], uniform->GetCount());
+			break;
+		case OpenGLShaderUniformDeclaration::Type::STRUCT:
+			UploadUniformStruct(uniform, buffer.Data, offset);
+			break;
+		default:
+			PP_CORE_ASSERT(false, "Unknown uniform type!");
+		}
+	}
+	void OpenGLShader::ResolveAndSetUniformField(const OpenGLShaderUniformDeclaration& field, byte* data, int32_t offset)
+	{
+		switch (field.GetType())
+		{
+		case OpenGLShaderUniformDeclaration::Type::BOOL:
+			UploadUniformFloat(field.GetLocation(), *(bool*)&data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::FLOAT32:
+			UploadUniformFloat(field.GetLocation(), *(float*)&data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::INT32:
+			UploadUniformInt(field.GetLocation(), *(int32_t*)&data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC2:
+			UploadUniformFloat2(field.GetLocation(), *(glm::vec2*)&data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC3:
+			UploadUniformFloat3(field.GetLocation(), *(glm::vec3*)&data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::VEC4:
+			UploadUniformFloat4(field.GetLocation(), *(glm::vec4*)&data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::MAT3:
+			UploadUniformMat3(field.GetLocation(), *(glm::mat3*)&data[offset]);
+			break;
+		case OpenGLShaderUniformDeclaration::Type::MAT4:
+			UploadUniformMat4(field.GetLocation(), *(glm::mat4*)&data[offset]);
+			break;
+		default:
+			PP_CORE_ASSERT(false, "Unknown uniform type!");
+		}
+	}
+	void OpenGLShader::UploadUniformStruct(OpenGLShaderUniformDeclaration* uniform, byte* buffer, uint32_t offset)
+	{
+		const ShaderStruct& s = uniform->GetShaderUniformStruct();
+		const auto& fields = s.GetFields();
+		for (size_t k = 0; k < fields.size(); k++)
+		{
+			OpenGLShaderUniformDeclaration* field = (OpenGLShaderUniformDeclaration*)fields[k];
+			ResolveAndSetUniformField(*field, buffer, offset);
+			offset += field->m_Size;
+		}
+	}
+	void OpenGLShader::UploadUniformInt(uint32_t location, int32_t value)
+	{
+		glUniform1i(location, value);
+	}
+	void OpenGLShader::UploadUniformIntArray(uint32_t location, int32_t* values, int32_t count)
+	{
+		glUniform1iv(location, count, values);
+	}
+	void OpenGLShader::UploadUniformFloat(uint32_t location, float value)
+	{
+		glUniform1f(location, value);
+	}
+	void OpenGLShader::UploadUniformFloat2(uint32_t location, const glm::vec2& value)
+	{
+		glUniform2f(location, value.x, value.y);
+	}
+	void OpenGLShader::UploadUniformFloat3(uint32_t location, const glm::vec3& value)
+	{
+		glUniform3f(location, value.x, value.y, value.z);
+	}
+	void OpenGLShader::UploadUniformFloat4(uint32_t location, const glm::vec4& value)
+	{
+		glUniform4f(location, value.x, value.y, value.z, value.w);
+	}
+	void OpenGLShader::UploadUniformMat3(uint32_t location, const glm::mat3& values)
+	{
+		glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(values));
+	}
+	void OpenGLShader::UploadUniformMat4(uint32_t location, const glm::mat4& values)
+	{
+		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(values));
+	}
+	void OpenGLShader::UploadUniformMat4Array(uint32_t location, const glm::mat4& values, uint32_t count)
+	{
+		glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(values));
 	}
 }
