@@ -82,7 +82,7 @@ namespace Puppet {
 		});
 	}
 
-	OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t * indices, uint32_t count)
+	OpenGLIndexBuffer::OpenGLIndexBuffer(const void* indices, uint32_t count)
 		: m_RendererID(0), m_Count(count)
 	{
 		PP_PROFILE_FUNCTION();

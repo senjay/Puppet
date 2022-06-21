@@ -31,7 +31,7 @@ namespace Puppet {
 	{
 	public:
 		OpenGLIndexBuffer(uint32_t count);
-		OpenGLIndexBuffer(uint32_t* indices, uint32_t count);
+		OpenGLIndexBuffer(const void* indices, uint32_t count);
 		virtual ~OpenGLIndexBuffer();
 		virtual void SetData(const void* data, uint32_t count, uint32_t offset = 0)override;
 		virtual void Bind() const;
