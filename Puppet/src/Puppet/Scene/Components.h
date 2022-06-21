@@ -8,7 +8,13 @@
 #include "Puppet/Camera/SceneCamera.h"
 #include "ScriptableEntity.h"
 #include "Puppet/Mesh/Mesh.h"
+#include "Puppet/Core/UUID.h"
 namespace Puppet {
+
+	struct IDComponent
+	{
+		UUID ID = 0;
+	};
 
 	struct TagComponent
 	{

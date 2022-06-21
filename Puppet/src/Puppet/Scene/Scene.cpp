@@ -21,6 +21,10 @@ namespace Puppet {
     Entity Scene::CreateEntity(const std::string& name)
     {
         Entity entity{m_Registry.create(),this};
+
+        auto& idComponent = entity.AddComponent<IDComponent>();
+        idComponent.ID = {};
+
         entity.AddComponent<TransformComponent>();
         auto& tag = entity.AddComponent<TagComponent>();
         tag.Tag = name.empty() ? "Entity" : name;
@@ -143,7 +147,10 @@ namespace Puppet {
     {
         static_assert(false);
     }
-
+    template<>
+    void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
+    {
+    }
     template<>
     void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
     {
