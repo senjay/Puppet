@@ -3,6 +3,7 @@
 #include "Puppet/Renderer/SceneRenderer.h"
 #include "Scripts/CameraController.h"
 #include "Scripts/SpriteController.h"
+#include "Scripts/DirectionalLightController.h"
 #include "ImGuiUtils/ImGuiWrapper.h"
 namespace Puppet {
 	extern const std::filesystem::path g_AssetPath;
@@ -50,7 +51,7 @@ namespace Puppet {
 				break;
 			}
 			case SceneState::Play:
-			{
+			{	
 				m_ActiveScene->OnRenderRuntime(ts);
 				break;
 			}
@@ -468,11 +469,11 @@ namespace Puppet {
 	{
 		Entity PrimaryCameraEntity =m_ActiveScene->GetPrimaryCameraEntity();
 		PrimaryCameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-		auto view= m_ActiveScene->GetAllEntitiesWith<SpriteRendererComponent>();
+		auto view= m_ActiveScene->GetAllEntitiesWith<DirectionalLightComponent>();
 		for (auto entity : view)
 		{
-			Entity spriteEntity= Entity{ entity, m_ActiveScene.get() };
-			spriteEntity.AddComponent<NativeScriptComponent>().Bind<SpriteController>();
+			Entity dirlightEntity= Entity{ entity, m_ActiveScene.get() };
+			dirlightEntity.AddComponent<NativeScriptComponent>().Bind<DirectionalLightController>();
 		}
 	}
 

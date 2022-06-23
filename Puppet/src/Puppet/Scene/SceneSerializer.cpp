@@ -176,7 +176,7 @@ namespace Puppet {
 			out << YAML::BeginMap; // TransformComponent
 			auto& tc = entity.GetComponent<TransformComponent>();
 			out << YAML::Key << "Translation" << YAML::Value << tc.Translation;
-			out << YAML::Key << "Rotation" << YAML::Value << tc.Rotation;
+			out << YAML::Key << "Rotation" << YAML::Value << glm::degrees(tc.Rotation);
 			out << YAML::Key << "Scale" << YAML::Value << tc.Scale;
 
 			out << YAML::EndMap; // TransformComponent

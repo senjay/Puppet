@@ -121,6 +121,16 @@ namespace Puppet {
 		s_Data.BRDFLUT = Texture2D::Create("assets/textures/BRDF_LUT.tga");
 
 
+
+		// Grid
+		auto gridShader = ShaderLibrary::GetInstance().Get("Grid");
+		s_Data.GridMaterial = MaterialInstance::Create(Material::Create(gridShader));
+		s_Data.GridMaterial->SetFlag(MaterialFlag::TwoSided, true);
+		float gridScale = 16.025f, gridSize = 0.025f;
+		s_Data.GridMaterial->Set("u_Scale", gridScale);
+		s_Data.GridMaterial->Set("u_Res", gridSize);
+
+
 		s_Data.ShadowMapShader = ShaderLibrary::GetInstance().Get("ShadowMap");
 		FramebufferSpecification shadowMapFramebufferSpec;
 		shadowMapFramebufferSpec.Width = 4096;
