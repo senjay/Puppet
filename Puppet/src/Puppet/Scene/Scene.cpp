@@ -155,6 +155,22 @@ namespace Puppet {
     void Scene::OnRenderRuntime(TimeStep ts)
     {
         
+        //Update Script
+        //TODO:Script Engine
+        {
+            m_Registry.view<NativeScriptComponent>().each([this, &ts](auto entity, auto& nsc)
+                {
+                    // TODO: Move to Scene::OnScenePlay
+                    if (!nsc.Instance)
+                    {
+                        nsc.Instance = nsc.InstantiateScript();//实例化脚本
+                        nsc.Instance->m_Entity = Entity{ entity, this };
+                        nsc.Instance->OnCreate();//调用脚本
+                    }
+
+                    nsc.Instance->OnUpdate(ts);//调用脚本
+                });
+        }
         /////////////////////////////////////////////////////////////////////
         // RENDER 3D SCENE
         /////////////////////////////////////////////////////////////////////
