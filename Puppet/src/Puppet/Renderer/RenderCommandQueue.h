@@ -20,8 +20,9 @@ namespace Puppet {
 		submitFun:cmdFun的参数,真正提交的lambda object,在ptr处调用placement new 保存
 		*/
 		void* Allocate(RenderCommandFn func, uint32_t size);
-
+		
 		void Execute();
+		std::pair<uint32_t, uint32_t>GetCommandQueueStatus();
 	private:
 		uint8_t* m_CommandBuffer;
 		uint8_t* m_CommandBufferPtr;

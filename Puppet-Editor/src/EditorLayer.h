@@ -38,10 +38,19 @@ namespace Puppet
 
 		void UI_Toolbar();
 		void CreateBindTestScripts();
+		std::pair<float, float> GetMouseViewportSpace();
+		std::pair<glm::vec3, glm::vec3> CastRay(float mx,float my);
 	private:
 		Ref<Scene>m_ActiveScene;
 		EditorCamera m_EditorCamera;
 		Entity m_HoveredEntity;
+		/*struct SelectedSubmesh
+		{
+			Puppet::Entity Entity;
+			Submesh* Mesh = nullptr;
+			float Distance = 0.0f;
+		};
+		std::vector<SelectedSubmesh> m_SelectionContext;*/
 
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		ContentBrowserPanel m_ContentBrowserPanel;

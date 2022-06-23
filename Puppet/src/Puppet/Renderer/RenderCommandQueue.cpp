@@ -32,8 +32,6 @@ namespace Puppet {
 
 	void RenderCommandQueue::Execute()
 	{
-		//PP_CORE_TRACE("RenderCommandQueue::Execute -- {0} commands, {1} bytes", m_CommandCount, (m_CommandBufferPtr - m_CommandBuffer));
-
 		uint8_t* buffer = m_CommandBuffer;
 
 		for (uint32_t i = 0; i < m_CommandCount; ++i)
@@ -49,6 +47,11 @@ namespace Puppet {
 
 		m_CommandBufferPtr = m_CommandBuffer;
 		m_CommandCount = 0;
+	}
+
+	std::pair<uint32_t, uint32_t> RenderCommandQueue::GetCommandQueueStatus()
+	{
+		return { m_CommandCount,m_CommandBufferPtr - m_CommandBuffer };
 	}
 
 }

@@ -5,6 +5,7 @@
 #include "Scripts/SpriteController.h"
 #include "Scripts/DirectionalLightController.h"
 #include "ImGuiUtils/ImGuiWrapper.h"
+#include <glm/glm.hpp>
 namespace Puppet {
 	extern const std::filesystem::path g_AssetPath;
 
@@ -182,6 +183,9 @@ namespace Puppet {
 		ImGui::Text("Puppet in Example Layer\n");
 		ImGui::Text("FPS: %d\n", m_FPS);
 		ImGui::Text("Frame Time: %.2fms\n", 1000.0/ m_FPS);
+		auto [rcCnt, rcSize] = Renderer::GetCommandQueueStatus();
+		ImGui::Text("RenderCommand Cnt: %d\n", rcCnt);
+		ImGui::Text("RenderCommand Size: %d Bytes\n", rcSize);
 		auto stats = Renderer2D::GetStats();
 		ImGui::Text("Renderer2D Stats:");
 		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
@@ -192,6 +196,10 @@ namespace Puppet {
 		if (m_HoveredEntity)
 			name = m_HoveredEntity.GetComponent<TagComponent>().Tag;
 		ImGui::Text("Hovered Entity: %s", name.c_str());
+		auto& caps = RenderCommand::GetCapabilities();
+		ImGui::Text("Vendor: %s", caps.Vendor.c_str());
+		ImGui::Text("Renderer: %s", caps.Renderer.c_str());
+		ImGui::Text("Version: %s", caps.Version.c_str());
 		ImGui::End();
 
 		UI_Toolbar();
@@ -355,8 +363,65 @@ namespace Puppet {
 		if (e.GetMouseButton() == Mouse::ButtonLeft)
 		{
 			//bool check: can use mouse select Entity
-			if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt)&& m_SceneState!= SceneState::Play)
+			if (m_ViewportHovered)
+			{
+				auto [mouseX, mouseY] = GetMouseViewportSpace();
+				if (mouseX > -1.0f && mouseX < 1.0f && mouseY > -1.0f && mouseY < 1.0f)
+				{
+					auto [origin, direction] = CastRay(mouseX, mouseY);
+
+					m_HoveredEntity = Entity();
+					m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+					auto meshEntities = m_ActiveScene->GetAllEntitiesWith<MeshComponent>();
+					for (auto e : meshEntities)
+					{
+						Entity entity = { e, m_ActiveScene.get() };
+						auto mesh = entity.GetComponent<MeshComponent>().Mesh;
+						if (!mesh)
+							continue;
+
+						auto& submeshes = mesh->GetSubmeshes();
+						float lastT = std::numeric_limits<float>::max();
+						for (uint32_t i = 0; i < submeshes.size(); i++)
+						{
+							Submesh& submesh = submeshes[i];
+							glm::mat4 ts = entity.GetComponent<TransformComponent>().GetTransform();
+							Ray ray = {
+								glm::inverse(ts * submesh.Transform) * glm::vec4(origin, 1.0f),
+								glm::inverse(glm::mat3(ts) * glm::mat3(submesh.Transform)) * direction
+							};
+
+							float t;
+							bool intersects = ray.IntersectsAABB(submesh.BoundingBox, t);
+							if (intersects)
+							{
+								const auto& triangleCache = mesh->GetTriangleCache(i);
+								for (const auto& triangle : triangleCache)
+								{
+									if (ray.IntersectsTriangle(triangle.V0.Position, triangle.V1.Position, triangle.V2.Position, t))
+									{
+										PP_WARN("INTERSECTION: {0}, t={1}", submesh.NodeName, t);
+										if (t < lastT)
+										{
+											lastT = t;
+											m_HoveredEntity = entity;
+
+										}
+										//m_SelectionContext.push_back({ entity, &submesh, t });
+										break;
+									}
+								}
+							}
+						}
+					}
+					//std::sort(m_SelectionContext.begin(), m_SelectionContext.end(), [](auto& a, auto& b) { return a.Distance < b.Distance; });
+					//if (m_SelectionContext.size())
+						//OnSelected(m_SelectionContext[0]);
+				}
+			}
+			if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt) && m_SceneState != SceneState::Play)
 				m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+			
 		}
 		return false;
 	}
@@ -475,6 +540,30 @@ namespace Puppet {
 			Entity dirlightEntity= Entity{ entity, m_ActiveScene.get() };
 			dirlightEntity.AddComponent<NativeScriptComponent>().Bind<DirectionalLightController>();
 		}
+	}
+
+	std::pair<float, float> EditorLayer::GetMouseViewportSpace()
+	{
+		auto [mx, my] = ImGui::GetMousePos();
+		mx -= m_ViewportBounds[0].x;
+		my -= m_ViewportBounds[0].y;
+		glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+		my = viewportSize.y - my;
+		return { (mx / viewportSize.x) * 2.0f - 1.0f, ((my / viewportSize.y) * 2.0f - 1.0f) };
+	}
+
+	std::pair<glm::vec3, glm::vec3> EditorLayer::CastRay(float mx, float my)
+	{
+		glm::vec4 mouseClipPos = { mx, my, -1.0f, 1.0f };
+
+		auto inverseProj = glm::inverse(m_EditorCamera.GetProjection());
+		auto inverseView = glm::inverse(glm::mat3(m_EditorCamera.GetViewMatrix()));
+
+		glm::vec4 ray = inverseProj * mouseClipPos;
+		glm::vec3 rayPos = m_EditorCamera.GetPosition();
+		glm::vec3 rayDir = inverseView * glm::vec3(ray);
+
+		return { rayPos, rayDir };
 	}
 
 

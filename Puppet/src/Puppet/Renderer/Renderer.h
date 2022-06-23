@@ -45,6 +45,7 @@ namespace Puppet {
 		static void SubmitMeshWithShader(Ref<Mesh> mesh, const glm::mat4& transform, Ref<Shader> shader);
 		static void DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest = true);
 		static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
+		static std::pair<uint32_t, uint32_t>GetCommandQueueStatus() { return GetRenderCommandQueue().GetCommandQueueStatus(); }
 	private:
 		static RenderCommandQueue& GetRenderCommandQueue();
 	private:

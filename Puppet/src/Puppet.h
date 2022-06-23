@@ -31,6 +31,7 @@
 
 #include "Puppet/Utils/PlatformUtils.h"
 #include "Puppet/Math/MathUtils.h"
-
+#include "Puppet/Math/AABB.h"
+#include "Puppet/Math/Ray.h"
 
 #include "Puppet/Core/Log.h"
