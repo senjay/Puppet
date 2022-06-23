@@ -1,9 +1,6 @@
 #pragma once
-
 #include <filesystem>
-
-#include "Puppet/Renderer/Texture.h"
-
+#include <optional>
 namespace Puppet {
 
 	class ContentBrowserPanel
@@ -11,12 +8,13 @@ namespace Puppet {
 	public:
 		ContentBrowserPanel();
 
-		void OnImGuiRender();
+		void OnImGuiRender(bool* pOpen);
+	private:
+		void DrawTree();
+		void DrawTreeRecursive(const std::filesystem::path& currentPath);
+		void DrawContent();
 	private:
 		std::filesystem::path m_CurrentDirectory;
-
-		Ref<Texture2D> m_DirectoryIcon;
-		Ref<Texture2D> m_FileIcon;
+		std::optional<std::filesystem::path> m_SelectedDirectory;
 	};
-
 }

@@ -147,14 +147,19 @@ namespace Puppet {
 				if (ImGui::MenuItem("Exit")) Application::Get().Close();
 				ImGui::EndMenu();
 			}
-
+			if (ImGui::BeginMenu("Window"))
+			{
+				ImGui::MenuItem("Content Browser", NULL, &b_ShowContentBrowser);
+				ImGui::EndMenu();
+			}
 			ImGui::EndMenuBar();
 		}
 		static bool show = true;
 		ImGui::ShowDemoWindow(&show);
 
 		m_SceneHierarchyPanel.OnImGuiRender();
-		m_ContentBrowserPanel.OnImGuiRender();
+		if(b_ShowContentBrowser)
+			m_ContentBrowserPanel.OnImGuiRender(&b_ShowContentBrowser);
 
 
 		ImGui::Begin("Environment");

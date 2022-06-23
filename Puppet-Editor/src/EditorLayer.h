@@ -65,6 +65,9 @@ namespace Puppet
 		// PBR params
 		bool m_RadiancePrefilter = false;
 		float m_EnvMapRotation = 0.0f;
+
+		//window
+		bool b_ShowContentBrowser = true;
 	};
 }
 
