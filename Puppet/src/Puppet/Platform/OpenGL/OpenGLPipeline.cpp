@@ -12,17 +12,16 @@ namespace Puppet {
 	}
 	OpenGLPipeline::~OpenGLPipeline()
 	{
-		RendererID rid = m_VertexArrayRendererID;
-		Renderer::Submit([rid]()mutable
+		Renderer::Submit([instance=Ref<OpenGLPipeline>(this)]()mutable
 			{
-				glDeleteVertexArrays(1, &rid);
+				glDeleteVertexArrays(1, &instance->m_VertexArrayRendererID);
 			});
 	}
 	void OpenGLPipeline::Invalidate()
 	{
 		PP_CORE_ASSERT(m_Specification.Layout.GetElements().size(), "Layout is empty!");
-		Ref<OpenGLPipeline> instance = this;
-		Renderer::Submit([instance]() mutable
+
+		Renderer::Submit([instance = Ref<OpenGLPipeline>(this)]() mutable
 			{
 				RendererID& vertexArrayRendererID = instance->m_VertexArrayRendererID;
 
@@ -36,8 +35,7 @@ namespace Puppet {
 	}
 	void OpenGLPipeline::Bind()
 	{
-		Ref<OpenGLPipeline> instance = this;
-		Renderer::Submit([instance]()mutable
+		Renderer::Submit([instance = Ref<OpenGLPipeline>(this)]()mutable
 			{
 				glBindVertexArray(instance->m_VertexArrayRendererID);
 

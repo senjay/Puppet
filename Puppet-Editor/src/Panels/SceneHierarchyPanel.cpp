@@ -9,6 +9,7 @@
 #include "../ImGuiUtils/ImGuiWrapper.h"
 namespace Puppet {
 	extern const std::filesystem::path g_AssetPath;
+	glm::mat4 Mat4FromAssimpMat4(const aiMatrix4x4& matrix);
 
 	SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& context)
 	{
@@ -36,12 +37,37 @@ namespace Puppet {
 		// Right-click on blank space
 		if(ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight| ImGuiPopupFlags_NoOpenOverItems))
 		{
-			if (ImGui::MenuItem("Create Empty Entity"))
-				m_Context->CreateEntity("Empty Entity");
-
+			if (ImGui::BeginMenu("Create"))
+			{
+				if (ImGui::MenuItem("Empty Entity"))
+				{
+					auto newEntity = m_Context->CreateEntity("Empty Entity");
+					m_SelectionContext = newEntity;
+				}
+				if (ImGui::MenuItem("Mesh"))
+				{
+					auto newEntity = m_Context->CreateEntity("Mesh");
+					newEntity.AddComponent<MeshComponent>();
+					m_SelectionContext = newEntity;
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Directional Light"))
+				{
+					auto newEntity = m_Context->CreateEntity("Directional Light");
+					newEntity.AddComponent<DirectionalLightComponent>();
+					newEntity.GetComponent<TransformComponent>().Rotation = glm::radians(glm::vec3{ 80.0f, 10.0f, 0.0f });
+					m_SelectionContext = newEntity;
+				}
+				if (ImGui::MenuItem("Sky Light"))
+				{
+					auto newEntity = m_Context->CreateEntity("Sky Light");
+					newEntity.AddComponent<SkyLightComponent>();
+					m_SelectionContext = newEntity;
+				}
+				ImGui::EndMenu();
+			}
 			ImGui::EndPopup();
 		}
-
 		ImGui::End();
 
 		ImGui::Begin("Properties");
@@ -216,49 +242,83 @@ namespace Puppet {
 
 	void SceneHierarchyPanel::DrawComponents(Entity entity)
 	{
+		ImGui::AlignTextToFramePadding();
+		ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 		if (entity.HasComponent<TagComponent>())
 		{
 			auto& tag = entity.GetComponent<TagComponent>().Tag;
-
 			char buffer[256];
-			memset(buffer, 0, sizeof(buffer));
-			std::strncpy(buffer, tag.c_str(), sizeof(buffer));
-			if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
+			memset(buffer, 0, 256);
+			memcpy(buffer, tag.c_str(), tag.length());
+			ImGui::PushItemWidth(contentRegionAvailable.x * 0.5f);
+			if (ImGui::InputText("##Tag", buffer, 256))
 			{
 				tag = std::string(buffer);
 			}
+			ImGui::PopItemWidth();
 		}
 
 		ImGui::SameLine();
-		ImGui::PushItemWidth(-1);
-
+		auto id = entity.GetComponent<IDComponent>().ID;
+		ImGui::TextDisabled("%llx", id);
+		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 textSize = ImGui::CalcTextSize("Add Component");
+		ImGui::SameLine(contentRegionAvailable.x - (textSize.x + GImGui->Style.FramePadding.y));
 		if (ImGui::Button("Add Component"))
 			ImGui::OpenPopup("AddComponent");
 
 		if (ImGui::BeginPopup("AddComponent"))
 		{
-			if (ImGui::MenuItem("Camera"))
+			if (!m_SelectionContext.HasComponent<CameraComponent>())
 			{
-				if (!m_SelectionContext.HasComponent<CameraComponent>())
+				if (ImGui::Button("Camera"))
+				{
 					m_SelectionContext.AddComponent<CameraComponent>();
-				else
-					PP_CORE_WARN("This entity already has the Camera Component!");
-				ImGui::CloseCurrentPopup();
+					ImGui::CloseCurrentPopup();
+				}
 			}
-
-			if (ImGui::MenuItem("Sprite Renderer"))
+			if (!m_SelectionContext.HasComponent<MeshComponent>())
 			{
-				if (!m_SelectionContext.HasComponent<SpriteRendererComponent>())
-					m_SelectionContext.AddComponent<SpriteRendererComponent>();
-				else
-					PP_CORE_WARN("This entity already has the Sprite Renderer Component!");
-				ImGui::CloseCurrentPopup();
+				if (ImGui::Button("Mesh"))
+				{
+					m_SelectionContext.AddComponent<MeshComponent>();
+					ImGui::CloseCurrentPopup();
+				}
 			}
-
+			if (!m_SelectionContext.HasComponent<DirectionalLightComponent>())
+			{
+				if (ImGui::Button("Directional Light"))
+				{
+					m_SelectionContext.AddComponent<DirectionalLightComponent>();
+					ImGui::CloseCurrentPopup();
+				}
+			}
+			if (!m_SelectionContext.HasComponent<SkyLightComponent>())
+			{
+				if (ImGui::Button("Sky Light"))
+				{
+					m_SelectionContext.AddComponent<SkyLightComponent>();
+					ImGui::CloseCurrentPopup();
+				}
+			}
+			if (!m_SelectionContext.HasComponent<NativeScriptComponent>())
+			{
+				if (ImGui::Button("Script"))
+				{
+					m_SelectionContext.AddComponent<NativeScriptComponent>();
+					ImGui::CloseCurrentPopup();
+				}
+			}
+			if (!m_SelectionContext.HasComponent<SpriteRendererComponent>())
+			{
+				if (ImGui::Button("Sprite Renderer"))
+				{
+					m_SelectionContext.AddComponent<SpriteRendererComponent>();
+					ImGui::CloseCurrentPopup();
+				}
+			}
 			ImGui::EndPopup();
 		}
-
-		ImGui::PopItemWidth();
 
 		DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component)
 			{
@@ -271,7 +331,7 @@ namespace Puppet {
 				updateTransform |= DrawVec3Control("Scale", component.Scale, 1.0f);
 			});
 
-		DrawComponent<CameraComponent>("Camera", entity, [](auto& component)
+		DrawComponent<CameraComponent>("Camera", entity, [](CameraComponent& component)
 			{
 				auto& camera = component.Camera;
 
@@ -299,227 +359,237 @@ namespace Puppet {
 
 				if (camera.GetProjectionType() == SceneCamera::ProjectionType::Perspective)
 				{
+					//float perspectiveVerticalFov = glm::degrees(camera.GetPerspectiveVerticalFOV());
+					//if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
+					//	camera.SetPerspectiveVerticalFOV(glm::radians(perspectiveVerticalFov));
+
+					//float perspectiveNear = camera.GetPerspectiveNearClip();
+					//if (ImGui::DragFloat("Near", &perspectiveNear))
+					//	camera.SetPerspectiveNearClip(perspectiveNear);
+
+					//float perspectiveFar = camera.GetPerspectiveFarClip();
+					//if (ImGui::DragFloat("Far", &perspectiveFar))
+					//	camera.SetPerspectiveFarClip(perspectiveFar);
+
+					ImGuiUtils::BeginPropertyGrid();
 					float perspectiveVerticalFov = glm::degrees(camera.GetPerspectiveVerticalFOV());
-					if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
+					if (ImGuiUtils::Property("Vertical FOV", perspectiveVerticalFov))
 						camera.SetPerspectiveVerticalFOV(glm::radians(perspectiveVerticalFov));
 
 					float perspectiveNear = camera.GetPerspectiveNearClip();
-					if (ImGui::DragFloat("Near", &perspectiveNear))
+					if (ImGuiUtils::Property("Near Clip", perspectiveNear))
 						camera.SetPerspectiveNearClip(perspectiveNear);
-
 					float perspectiveFar = camera.GetPerspectiveFarClip();
-					if (ImGui::DragFloat("Far", &perspectiveFar))
+					if (ImGuiUtils::Property("Far Clip", perspectiveFar))
 						camera.SetPerspectiveFarClip(perspectiveFar);
+					ImGuiUtils::EndPropertyGrid();
 				}
-
 				if (camera.GetProjectionType() == SceneCamera::ProjectionType::Orthographic)
 				{
+					ImGuiUtils::BeginPropertyGrid();
 					float orthoSize = camera.GetOrthographicSize();
-					if (ImGui::DragFloat("Size", &orthoSize))
+					if(ImGuiUtils::Property("Size", orthoSize))
 						camera.SetOrthographicSize(orthoSize);
-
 					float orthoNear = camera.GetOrthographicNearClip();
-					if (ImGui::DragFloat("Near", &orthoNear))
+					if(ImGuiUtils::Property("Near", orthoNear))
 						camera.SetOrthographicNearClip(orthoNear);
-
 					float orthoFar = camera.GetOrthographicFarClip();
-					if (ImGui::DragFloat("Far", &orthoFar))
+					if(ImGuiUtils::Property("Far", orthoFar))
 						camera.SetOrthographicFarClip(orthoFar);
+					ImGuiUtils::Property("Fixed Aspect Ratio", component.FixedAspectRatio);
+					ImGuiUtils::EndPropertyGrid();
 
-					ImGui::Checkbox("Fixed Aspect Ratio", &component.FixedAspectRatio);
 				}
 			});
 
-		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)
+		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component)
 			{
-				ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
 
-				ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
-				if (ImGui::BeginDragDropTarget())
-				{
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-					{
-						const wchar_t* path = (const wchar_t*)payload->Data;
-						std::filesystem::path texturePath = std::filesystem::path(g_AssetPath) / path;
-						Ref<Texture2D> texture = Texture2D::Create(texturePath.string());
-						if (texture->IsLoaded())
-							component.Texture = texture;
-						else
-							PP_WARN("Could not load texture {0}", texturePath.filename().string());
-					}
-					ImGui::EndDragDropTarget();
-				}
-
-				ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f);
-			});
-		
-		DrawComponent<MeshComponent>("Mesh Renderer", entity, [](MeshComponent& component)
-			{
-				ImGui::Columns(2, nullptr, false);
-				ImGui::SetColumnWidth(0, 100.0f);
-				ImGui::Text("Mesh Path");
+				ImGui::Columns(3);
+				ImGui::SetColumnWidth(0, 100);
+				ImGui::SetColumnWidth(1, 300);
+				ImGui::SetColumnWidth(2, 40);
+				ImGui::Text("Texture Path");
 				ImGui::NextColumn();
+				ImGui::PushItemWidth(-1);
+				if (component.Texture)
+					ImGui::InputText("##Texturepath",(char*)component.Texture->GetPath().c_str(), 256, ImGuiInputTextFlags_ReadOnly);
+				else
+					ImGui::InputText("##Texturepath", (char*)"Null", 256, ImGuiInputTextFlags_ReadOnly);
+				ImGui::PopItemWidth();
+				ImGui::NextColumn();
+				if (ImGui::Button("...##openTexture"))
+				{
+					std::filesystem::path texturePath =FileDialogs::OpenFile("Pic (*.jpg *.png *.tga)\0");
+					if (!texturePath.empty())
+						component.Texture = TextureLibrary::GetInstance().FindorAdd(texturePath.stem().string(), texturePath.string());
+				}
+				ImGui::Columns(1);
+				Ref<Texture2D> inputTexture=ImGuiUtils::PropertyImage(component.Texture);
+				if (inputTexture)
+					component.Texture = inputTexture;
+				ImGuiUtils::BeginPropertyGrid();
+				ImGuiUtils::PropertyColor4("Color", component.Color);
+				ImGuiUtils::Property("Intensity", component.TilingFactor,0.1,0,100);
+				ImGuiUtils::EndPropertyGrid();
+			});
+		DrawComponent<DirectionalLightComponent>("Directional Light", entity, [](DirectionalLightComponent& dlc)
+			{
+				ImGuiUtils::BeginPropertyGrid();
+				ImGuiUtils::PropertyColor3("Radiance", dlc.Radiance);
+				ImGuiUtils::Property("Intensity", dlc.Intensity);
+				ImGuiUtils::Property("Cast Shadows", dlc.CastShadows);
+				ImGuiUtils::Property("Soft Shadows", dlc.SoftShadows);
+				ImGuiUtils::Property("Source Size", dlc.LightSize);
+				ImGuiUtils::EndPropertyGrid();
+			});
+		DrawComponent<SkyLightComponent>("Sky Light", entity, [](SkyLightComponent& slc)
+			{
+				ImGui::Columns(3);
+				ImGui::SetColumnWidth(0, 100);
+				ImGui::SetColumnWidth(1, 300);
+				ImGui::SetColumnWidth(2, 40);
+				ImGui::Text("File Path");
+				ImGui::NextColumn();
+				ImGui::PushItemWidth(-1);
+				if (!slc.SceneEnvironment.FilePath.empty())
+					ImGui::InputText("##envfilepath", (char*)slc.SceneEnvironment.FilePath.c_str(), 256, ImGuiInputTextFlags_ReadOnly);
+				else
+					ImGui::InputText("##envfilepath", (char*)"Empty", 256, ImGuiInputTextFlags_ReadOnly);
+				ImGui::PopItemWidth();
+				ImGui::NextColumn();
+				if (ImGui::Button("...##openenv"))
+				{
+					std::string file = FileDialogs::OpenFile("env (*.hdr)\0");
+					if (!file.empty())
+						slc.SceneEnvironment = Environment::Load(file);
+				}
+				ImGui::Columns(1);
 
-				std::string standardPath = component.Path;
-				ImGui::Text(standardPath.c_str());
+				ImGuiUtils::BeginPropertyGrid();
+				ImGuiUtils::Property("Intensity", slc.Intensity, 0.01f, 0.0f, 5.0f);
+				ImGuiUtils::EndPropertyGrid();
+			});
+		DrawComponent<MeshComponent>("Mesh", entity, [](MeshComponent& component)
+			{
+				ImGui::Columns(3);
+				ImGui::SetColumnWidth(0, 100);
+				ImGui::SetColumnWidth(1, 300);
+				ImGui::SetColumnWidth(2, 40);
+
+				ImGui::Text("File Path");
+				ImGui::NextColumn();
+				ImGui::PushItemWidth(-1);
+				if (component.Mesh)
+					ImGui::InputText("##meshfilepath", (char*)component.Mesh->GetFilePath().c_str(), 256, ImGuiInputTextFlags_ReadOnly);
+				else
+					ImGui::InputText("##meshfilepath", (char*)"Null", 256, ImGuiInputTextFlags_ReadOnly);
 				if (ImGui::BeginDragDropTarget())
 				{
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 					{
 						auto path = (const wchar_t*)payload->Data;
-						component.Path = (std::filesystem::path("assets") / path).string();
-						component.m_Mesh = CreateRef<Mesh>(component.Path);
+						std::string meshPath = (std::filesystem::path("assets") / path).string();
+						component.Mesh = CreateRef<Mesh>(meshPath);
 					}
 					ImGui::EndDragDropTarget();
 				}
-
-				ImGui::SameLine();
-				if (ImGui::Button("..."))
+				ImGui::PopItemWidth();
+				ImGui::NextColumn();
+				if (ImGui::Button("...##openmesh"))
 				{
-					std::string filepath = FileDialogs::OpenFile("Model (*.obj *.fbx *.dae *.gltf)\0");
-					if (filepath.find("Assets") != std::string::npos)
-					{
-						filepath = filepath.substr(filepath.find("Assets"), filepath.length());
-					}
-					else
-					{
-						// TODO: Import Mesh
-						//HE_CORE_ASSERT(false, "HEngine Now Only support the model from Assets!");
-						//filepath = "";
-					}
-					if (!filepath.empty())
-					{
-						component.m_Mesh = CreateRef<Mesh>(filepath);
-						component.Path = filepath;
-					}
+					std::string file = FileDialogs::OpenFile("Model (*.obj *.fbx *.dae *.gltf)\0");
+					if (!file.empty())
+						component.Mesh = Ref<Mesh>::Create(file);
 				}
-				ImGui::EndColumns();
-
-				if (ImGuiUtils::TreeNodeExStyle2((void*)"Material", "Material"))
+				ImGui::Columns(1);
+				if (component.Mesh&&ImGuiUtils::TreeNodeExStyle2((void*)"Material", "Material"))
 				{
 					uint32_t matIndex = 0;
 
-					const auto& materialNode = [&matIndex = matIndex](const char* name, Ref<Material>& material, Ref<Texture2D>& tex, void(*func)(Ref<Material>& mat)) {
+					const auto& materialNode = [&matIndex = matIndex](const char* name, Ref<MaterialInstance>& material, const std::string& textureName, void(*func)(Ref<MaterialInstance>& mat)) {
 						std::string label = std::string(name) + std::to_string(matIndex);
 						ImGui::PushID(label.c_str());
-
+						Ref<Texture2D> tex = material->TryGetResource<Texture2D>(textureName);
 						if (ImGui::TreeNode((void*)name, name))
 						{
-							ImGui::Image((ImTextureID)tex->GetRendererID(), ImVec2(64, 64), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-							if (ImGui::BeginDragDropTarget())
+							Ref<Texture2D> inputTexture = ImGuiUtils::PropertyImage(tex);
+							if (inputTexture)
 							{
-								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-								{
-									const wchar_t* path = (const wchar_t*)payload->Data;
-									std::string Path = (std::filesystem::path("assets") / path).string();
-									tex = TextureLibrary::GetInstance().FindorAdd("xx", Path);
-								}
-								ImGui::EndDragDropTarget();
+								material->Set(textureName, inputTexture);
 							}
-
 							func(material);
-
 							ImGui::TreePop();
 						}
 
 						ImGui::PopID();
 					};
 
-					for (auto& material : component.m_Mesh->m_Material)
+					for (auto& subMesh : component.Mesh->m_Submeshes)
 					{
+						
+						auto& materialInstance = component.Mesh->m_Materials[subMesh.MaterialIndex];
 						std::string label = std::string("material") + std::to_string(matIndex);
 						ImGui::PushID(label.c_str());
-
-						if (ImGui::TreeNode((void*)label.c_str(), std::to_string(matIndex).c_str()))
+						if(ImGui::TreeNodeEx((void*)label.c_str(), ImGuiTreeNodeFlags_Framed, subMesh.NodeName.c_str()))
 						{
-							materialNode("Albedo", material, material->mAlbedoMap, [](Ref<Material>& mat) {
+							
+							materialNode("Albedo", materialInstance,"u_AlbedoTexture", [](Ref<MaterialInstance>& mat) {
 								ImGui::SameLine();
-								ImGui::Checkbox("Use", &mat->bUseAlbedoMap);
-
-								if (ImGui::ColorEdit4("##albedo", glm::value_ptr(mat->col)))
-								{
-									if (!mat->bUseAlbedoMap)
-									{
-										unsigned char data[4];
-										for (size_t i = 0; i < 4; i++)
-										{
-											data[i] = (unsigned char)(mat->col[i] * 255.0f);
-										}
-										mat->albedoRGBA->SetData(data, sizeof(unsigned char) * 4);
-									}
-								}
+								glm::vec3& albedoColor = mat->Get<glm::vec3>("u_AlbedoColor");
+								bool useAlbedoMap = mat->Get<float>("u_AlbedoTexToggle");
+								if(ImGui::Checkbox("Use", &useAlbedoMap))
+									mat->Set<float>("u_AlbedoTexToggle", useAlbedoMap ? 1.0f : 0.0f);
+								ImGui::ColorEdit4("##albedo", glm::value_ptr(albedoColor));
+								
 								});
 
-							materialNode("Normal", material, material->mNormalMap, [](Ref<Material>& mat) {
+							materialNode("Normal", materialInstance, "u_NormalTexture", [](Ref<MaterialInstance>& mat) {
 								ImGui::SameLine();
-								ImGui::Checkbox("Use", &mat->bUseNormalMap);
+								bool useNormalMap = mat->Get<float>("u_NormalTexToggle");
+								if(ImGui::Checkbox("Use", &useNormalMap))
+									mat->Set<float>("u_NormalTexToggle", useNormalMap ? 1.0f : 0.0f);
 								});
 
-							materialNode("Metallic", material, material->mMetallicMap, [](Ref<Material>& mat) {
+							materialNode("Metallic", materialInstance, "u_MetalnessTexture", [](Ref<MaterialInstance>& mat) {
 								ImGui::SameLine();
 
 								if (ImGui::BeginTable("Metallic", 1))
 								{
 									ImGui::TableNextRow();
 									ImGui::TableNextColumn();
-
-									ImGui::Checkbox("Use", &mat->bUseMetallicMap);
+									float& metalnessValue = mat->Get<float>("u_Metalness");
+									bool useMetalnessMap = mat->Get<float>("u_MetalnessTexToggle");
+									if (ImGui::Checkbox("Use", &useMetalnessMap))
+										mat->Set<float>("u_MetalnessTexToggle", useMetalnessMap ? 1.0f : 0.0f);
 
 									ImGui::TableNextRow();
 									ImGui::TableNextColumn();
-									if (ImGui::SliderFloat("##Metallic", &mat->metallic, 0.0f, 1.0f))
-									{
-										if (!mat->bUseMetallicMap)
-										{
-											unsigned char data[4];
-											for (size_t i = 0; i < 3; i++)
-											{
-												data[i] = (unsigned char)(mat->metallic * 255.0f);
-											}
-											data[3] = (unsigned char)255.0f;
-											mat->metallicRGBA->SetData(data, sizeof(unsigned char) * 4);
-										}
-									}
-
+									ImGui::SliderFloat("##MetallicInput", &metalnessValue, 0.0f, 1.0f);
 									ImGui::EndTable();
 								}
 								});
 
-							materialNode("Roughness", material, material->mRoughnessMap, [](Ref<Material>& mat) {
+							materialNode("Roughness", materialInstance, "u_RoughnessTexture", [](Ref<MaterialInstance>& mat) {
 								ImGui::SameLine();
 
 								if (ImGui::BeginTable("Roughness", 1))
 								{
 									ImGui::TableNextRow();
 									ImGui::TableNextColumn();
+									
+									float& roughnessValue = mat->Get<float>("u_Roughness");
+									bool useRoughnessMap = mat->Get<float>("u_RoughnessTexToggle");
 
-									ImGui::Checkbox("Use", &mat->bUseRoughnessMap);
+									if (ImGui::Checkbox("Use", &useRoughnessMap))
+										mat->Set<float>("u_RoughnessTexToggle", useRoughnessMap ? 1.0f : 0.0f);
 
 									ImGui::TableNextRow();
 									ImGui::TableNextColumn();
-									if (ImGui::SliderFloat("##Roughness", &mat->roughness, 0.0f, 1.0f))
-									{
-										if (!mat->bUseRoughnessMap)
-										{
-											unsigned char data[4];
-											for (size_t i = 0; i < 3; i++)
-											{
-												data[i] = (unsigned char)(mat->roughness * 255.0f);
-											}
-											data[3] = (unsigned char)255.0f;
-											mat->roughnessRGBA->SetData(data, sizeof(unsigned char) * 4);
-										}
-									}
-
+									ImGui::SliderFloat("##RoughnessInput", &roughnessValue, 0.0f, 1.0f);
 									ImGui::EndTable();
 								}
 								});
-
-							materialNode("Ambient Occlusion", material, material->mAoMap, [](Ref<Material>& mat) {
-								ImGui::SameLine();
-								ImGui::Checkbox("Use", &mat->bUseAoMap);
-								});
-
 							ImGui::TreePop();
 						}
 
@@ -531,70 +601,77 @@ namespace Puppet {
 					ImGui::TreePop();
 				}
 
-				if (component.m_Mesh->bAnimated)
+				if (component.Mesh&&component.Mesh->m_IsAnimated)
 				{
+					ImGui::SliderFloat("##AnimationTime", &component.Mesh->m_AnimationTime, 0.0f, (float)component.Mesh->m_Scene->mAnimations[0]->mDuration);
+					ImGui::DragFloat("Time Scale", &component.Mesh->m_TimeMultiplier, 0.05f, 0.0f, 10.0f);
+
 					if (ImGuiUtils::TreeNodeExStyle2((void*)"Animation", "Animation"))
 					{
-						ImGuiUtils::DrawTwoUI(
-							[&mesh = component.m_Mesh]() {
-							static std::string label = "Play";
-							if (ImGui::Button(label.c_str()))
+						static std::string label = "Play";
+						if (ImGui::Button(label.c_str()))
+						{
+							component.Mesh->m_AnimationPlaying = !component.Mesh->m_AnimationPlaying;
+							if (component.Mesh->m_AnimationPlaying)
+								label = "Stop";
+							else
 							{
-								mesh->bPlayAnim = !mesh->bPlayAnim;
-								if (mesh->bPlayAnim)
-									label = "Stop";
-								else
-								{
-									label = "Play";
-									mesh->m_Animator.Reset();
-								}
+								label = "Play";
+								component.Mesh->m_AnimationTime = 0.0f;
 							}
-						},
-							[&mesh = component.m_Mesh]() {
-							static std::string label = "Pause";
-							if (ImGui::Button(label.c_str()))
-							{
-								mesh->bStopAnim = !mesh->bStopAnim;
-								if (mesh->bStopAnim)
-									label = "Resume";
-								else
-									label = "Pause";
-							}
-						},
-							88.0f
-							);
-
+						}
 						ImGui::Columns(2, nullptr, false);
 						ImGui::Text("Speed");
 						ImGui::NextColumn();
-						ImGui::SliderFloat("##Speed", &component.m_Mesh->mAnimPlaySpeed, 0.1f, 10.0f);
+						ImGui::SliderFloat("##Speed", &component.Mesh->m_TimeMultiplier, 0.1f, 10.0f);
 						ImGui::EndColumns();
 
-						ImGui::ProgressBar(component.m_Mesh->m_Animator.GetProgress(), ImVec2(0.0f, 0.0f));
+						ImGui::ProgressBar(component.Mesh->GetAnimationProgress(), ImVec2(0.0f, 0.0f));
 
 						ImGui::TreePop();
 					}
 				}
 			});
+	}
+	void SceneHierarchyPanel::DrawMeshNode(const Ref<Mesh>& mesh, uint32_t& imguiMeshID)
+	{
+		static char imguiName[128];
+		memset(imguiName, 0, 128);
+		sprintf(imguiName, "Mesh##%d", imguiMeshID++);
 
-			DrawComponent<PointLightComponent>("Point Light", entity, [](auto& component)
-				{
-					ImGuiUtils::DrawTwoUI(
-						[]() { ImGui::Text("Light Intensity"); },
-						[&component = component]() { ImGui::SliderFloat("##Light Intensity", &component.Intensity, 0.0f, 10000.0f, "%.1f"); }
-					);
+		// Mesh Hierarchy
+		if (ImGui::TreeNode(imguiName))
+		{
+			auto rootNode = mesh->m_Scene->mRootNode;
+			MeshNodeHierarchy(mesh, rootNode);
+			ImGui::TreePop();
+		}
+	}
+	void SceneHierarchyPanel::MeshNodeHierarchy(const Ref<Mesh>& mesh, aiNode* node, const glm::mat4& parentTransform, uint32_t level)
+	{
+		glm::mat4 localTransform = Mat4FromAssimpMat4(node->mTransformation);
+		glm::mat4 transform = parentTransform * localTransform;
 
-					ImGuiUtils::DrawTwoUI(
-						[]() { ImGui::Text("Light Color"); },
-						[&component = component]() { ImGui::ColorEdit3("##Light Color", (float*)&component.LightColor); }
-					);
-				});
-			DrawComponent<DirectionalLightComponent>("Directional Light", entity, [](auto& component)
-				{
-					ImGuiUtils::DrawTwoUI(
-						[]() { ImGui::Text("Light Intensity"); },
-						[&component = component]() { ImGui::SliderFloat("##Light Intensity", &component.Intensity, 0.0f, 10.0f, "%.2f"); }
-					);
-				});
+		if (ImGui::TreeNode(node->mName.C_Str()))
+		{
+			{
+				auto [translation, rotation, scale] = Math::DecomposeTransform(transform);
+				ImGui::Text("World Transform");
+				ImGui::Text("  Translation: %.2f, %.2f, %.2f", translation.x, translation.y, translation.z);
+				ImGui::Text("  Scale: %.2f, %.2f, %.2f", scale.x, scale.y, scale.z);
+			}
+			{
+				auto [translation, rotation, scale] = Math::DecomposeTransform(localTransform);
+				ImGui::Text("Local Transform");
+				ImGui::Text("  Translation: %.2f, %.2f, %.2f", translation.x, translation.y, translation.z);
+				ImGui::Text("  Scale: %.2f, %.2f, %.2f", scale.x, scale.y, scale.z);
+			}
+
+			for (uint32_t i = 0; i < node->mNumChildren; i++)
+				MeshNodeHierarchy(mesh, node->mChildren[i], transform, level + 1);
+
+			ImGui::TreePop();
+		}
+
 	}
 }

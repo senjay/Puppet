@@ -62,6 +62,9 @@ namespace Puppet
 		int m_FPS;
 
 		Ref<Texture2D> m_IconPlay, m_IconStop;
+		// PBR params
+		bool m_RadiancePrefilter = false;
+		float m_EnvMapRotation = 0.0f;
 	};
 }
 

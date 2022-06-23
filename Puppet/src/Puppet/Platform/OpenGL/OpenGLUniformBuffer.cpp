@@ -8,8 +8,7 @@ namespace Puppet {
 	OpenGLUniformBuffer::OpenGLUniformBuffer(uint32_t size, uint32_t binding)
 	{
 		m_Size = size;
-		Ref<OpenGLUniformBuffer> instance = this;
-		Renderer::Submit([instance, binding]()mutable {
+		Renderer::Submit([instance = Ref<OpenGLUniformBuffer>(this), binding]()mutable {
 			glCreateBuffers(1, &instance->m_RendererID);
 			glNamedBufferData(instance->m_RendererID, instance->m_Size, nullptr, GL_DYNAMIC_DRAW); // TODO: investigate usage hint
 			glBindBufferBase(GL_UNIFORM_BUFFER, binding, instance->m_RendererID);
@@ -18,9 +17,9 @@ namespace Puppet {
 
 	OpenGLUniformBuffer::~OpenGLUniformBuffer()
 	{
-		RendererID rid = m_RendererID;
-		Renderer::Submit([rid]() {
-			glDeleteBuffers(1, &rid);
+		
+		Renderer::Submit([instance = Ref<OpenGLUniformBuffer>(this)]() {
+			glDeleteBuffers(1, &instance->m_RendererID);
 		});
 		
 	}
@@ -30,8 +29,7 @@ namespace Puppet {
 	{
 		m_LocalData = Buffer::Copy(data, size);
 		m_Size = size;
-		Ref<const OpenGLUniformBuffer> instance = this;
-		Renderer::Submit([instance,offset]()mutable {
+		Renderer::Submit([instance = Ref<OpenGLUniformBuffer>(this),offset]()mutable {
 			glNamedBufferSubData(instance->m_RendererID, offset, instance->m_Size, instance->m_LocalData.Data);
 		});
 	}

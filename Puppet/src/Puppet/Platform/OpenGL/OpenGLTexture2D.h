@@ -21,6 +21,8 @@ namespace Puppet {
 		bool IsLoaded() const override { return m_IsLoaded; };
 		void SetData(void* data, uint32_t size)override;
 
+		virtual void Resize(uint32_t width, uint32_t height) override;
+
 		void Bind(uint32_t slot = 0)const override;
 
 		bool operator==(const Texture& other) const override 

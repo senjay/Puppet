@@ -3,6 +3,7 @@
 #include "Puppet/Renderer/SceneRenderer.h"
 #include "Scripts/CameraController.h"
 #include "Scripts/SpriteController.h"
+#include "ImGuiUtils/ImGuiWrapper.h"
 namespace Puppet {
 	extern const std::filesystem::path g_AssetPath;
 
@@ -20,6 +21,7 @@ namespace Puppet {
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 		m_ActiveScene = CreateRef<Scene>();
+		m_ActiveScene->Init();
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);	
 	}
 
@@ -66,9 +68,9 @@ namespace Puppet {
 			
 			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
 			{
-				Renderer::WaitAndRender();
-				int pixelData=SceneRenderer::GetFinalRenderPass()->GetSpecification().TargetFramebuffer->ReadPixel(1, mouseX, mouseY);
-				m_HoveredEntity = pixelData ==-1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
+				//Renderer::WaitAndRender();
+				//int pixelData=SceneRenderer::GetFinalRenderPass()->GetSpecification().TargetFramebuffer->ReadPixel(1, mouseX, mouseY);
+				//m_HoveredEntity = pixelData ==-1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
 				//PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
 			}
 		}
@@ -154,6 +156,22 @@ namespace Puppet {
 		m_SceneHierarchyPanel.OnImGuiRender();
 		m_ContentBrowserPanel.OnImGuiRender();
 
+
+		ImGui::Begin("Environment");
+		ImGui::SliderFloat("Skybox LOD", &m_ActiveScene->GetSkyboxLod(), 0.0f, 11.0f);
+		ImGui::AlignTextToFramePadding();
+		ImGuiUtils::BeginPropertyGrid();
+		auto& light = m_ActiveScene->GetLight();
+		ImGuiUtils::Property("Light Direction", light.Direction);
+		ImGuiUtils::Property("Light Radiance", light.Radiance);
+		ImGuiUtils::Property("Light Multiplier", light.Multiplier, 0.05,0.0f, 5.0f);
+		ImGuiUtils::Property("Exposure", m_EditorCamera.GetExposure(), 0.05, 0.0f, 5.0f);
+		ImGuiUtils::Property("Radiance Prefiltering", m_RadiancePrefilter);
+		ImGuiUtils::Property("Env Map Rotation", m_EnvMapRotation, 1, -360.0f, 360.0f);
+		ImGuiUtils::EndPropertyGrid();
+		ImGui::End();
+
+
 		ImGui::Begin("Puppet Editor");
 		ImGui::Text("Puppet in Example Layer\n");
 		ImGui::Text("FPS: %d\n", m_FPS);
@@ -196,6 +214,7 @@ namespace Puppet {
 		m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
+		
 		//show viewport
 		uint32_t textureid = SceneRenderer::GetFinalColorBufferRendererID();
 		ImGui::Image((void*)textureid, ImVec2(m_ViewportSize.x, m_ViewportSize.y), ImVec2(0, 1), ImVec2(1, 0));
@@ -375,6 +394,7 @@ namespace Puppet {
 		if (serializer.Deserialize(m_SceneFilePath))
 		{
 			m_ActiveScene = newScene;
+			m_ActiveScene->Init();
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 			if(m_ActiveScene->GetSceneName()=="TestScene")
@@ -449,11 +469,6 @@ namespace Puppet {
 			Entity spriteEntity= Entity{ entity, m_ActiveScene.get() };
 			spriteEntity.AddComponent<NativeScriptComponent>().Bind<SpriteController>();
 		}
-		Entity ModelEntity=m_ActiveScene->CreateEntity("model");
-		//ModelEntity.AddComponent<MeshComponent>("./assets/models/dancing-stormtrooper/source/silly_dancing.fbx");
-		ModelEntity.AddComponent<MeshComponent>("./assets/models/nanosuit/nanosuit.obj");
-		Entity PointLight = m_ActiveScene->CreateEntity("light");
-		PointLight.AddComponent<PointLightComponent>();
 	}
 
 

@@ -24,8 +24,6 @@ namespace Puppet {
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
-		TextureLibrary::GetInstance().Init();
-		ShaderLibrary::GetInstance().Init();
 		Renderer::Init();
 		Renderer::WaitAndRender();
 	}

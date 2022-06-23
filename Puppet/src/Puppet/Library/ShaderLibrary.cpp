@@ -47,13 +47,20 @@ namespace Puppet {
 	}
 	void ShaderLibrary::Init()
 	{
-		Load("SceneComposite", "./assets/shaders/gl/SceneComposite.glsl");
 		Load("BloomBlur", "./assets/shaders/gl/BloomBlur.glsl");
 		Load("BloomBlend", "./assets/shaders/gl/BloomBlend.glsl");
+		Load("EnvironmentIrradiance", "./assets/shaders/gl/EnvironmentIrradiance.glsl");
+		Load("EnvironmentMipFilter", "./assets/shaders/gl/EnvironmentMipFilter.glsl");
+		Load("EquirectangularToCubeMap", "./assets/shaders/gl/EquirectangularToCubeMap.glsl");
+		Load("Grid", "./assets/shaders/gl/Grid.glsl");
+		Load("HazelPBR_Anim", "./assets/shaders/gl/HazelPBR_Anim.glsl");
+		Load("HazelPBR_Static", "./assets/shaders/gl/HazelPBR_Static.glsl");
+		Load("Outline", "./assets/shaders/gl/Outline.glsl");
+		Load("Renderer2D", "./assets/shaders/gl/Renderer2D.glsl");
+		Load("Renderer2D_Line", "./assets/shaders/gl/Renderer2D_Line.glsl");
+		Load("SceneComposite", "./assets/shaders/gl/SceneComposite.glsl");
+		Load("shader", "./assets/shaders/gl/shader.glsl");
 		Load("ShadowMap", "./assets/shaders/gl/ShadowMap.glsl");
-
-		Load("Default", "./assets/shaders/BasePBR.glsl");
-		Load("NormalOutline", "./assets/shaders/NormalOutline.glsl");
-		Load("NormalOutline_anim", "./assets/shaders/NormalOutline_anim.glsl");
+		Load("Skybox", "./assets/shaders/gl/Skybox.glsl");
 	}
 }

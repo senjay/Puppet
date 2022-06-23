@@ -1,29 +1,35 @@
 Scene: TestScene
+Environment:
+  AssetPath: E:\Puppet\Puppet-Editor\assets\env\venice_dawn_1_4k.hdr
+  Light:
+    Direction: [0, 0, 0]
+    Radiance: [0, 0, 0]
+    Multiplier: 1
 Entities:
-  - Entity: 1234124312
+  - Entity: 123412431
     TagComponent:
       Tag: Left
     TransformComponent:
       Translation: [-0.354999989, 0, 0.349999994]
-      Rotation: [0, -45.0000038, 0]
+      Rotation: [0, -0.0137077849, 0]
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 0, 0.949807167, 1]
-  - Entity: 1234124312
+  - Entity: 12341243
     TagComponent:
       Tag: Right
     TransformComponent:
       Translation: [0.351999998, 0, 0.349999994]
-      Rotation: [0, 45.0000038, 0]
+      Rotation: [0, 0.0137077849, 0]
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [0.54842025, 0, 0.586872578, 1]
-  - Entity: 1234124312
+  - Entity: 1234124
     TagComponent:
       Tag: Camera
     TransformComponent:
       Translation: [0, 1.70000005, 4]
-      Rotation: [-23.2000008, 0, 0]
+      Rotation: [-0.00706712436, 0, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Camera:
@@ -36,16 +42,16 @@ Entities:
         OrthographicFar: 1
       Primary: true
       FixedAspectRatio: false
-  - Entity: 1234124312
+  - Entity: 12341
     TagComponent:
       Tag: Top
     TransformComponent:
       Translation: [0, 0.5, 0]
-      Rotation: [90, 45.0000038, -2.41483622e-06]
+      Rotation: [0.027415568, 0.0137077849, -7.35601191e-10]
       Scale: [0.999999881, 0.999999881, 0.999999642]
     SpriteRendererComponent:
       Color: [0.876447856, 0, 0.834712803, 1]
-  - Entity: 1234124312
+  - Entity: 12341243124
     TagComponent:
       Tag: red
     TransformComponent:
@@ -54,3 +60,35 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 0, 0, 1]
+  - Entity: 14277674676943996463
+    TagComponent:
+      Tag: model
+    TransformComponent:
+      Translation: [0, -8.60000038, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      AssetPath: ./assets/models/nanosuit/nanosuit.obj
+  - Entity: 8144424856721072898
+    TagComponent:
+      Tag: Directlight
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    DirectionalLightComponent:
+      Radiance: [1, 1, 1]
+      CastShadows: true
+      SoftShadows: true
+      LightSize: 0.5
+  - Entity: 2675226757711589532
+    TagComponent:
+      Tag: Sky Light
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SkyLightComponent:
+      EnvironmentAssetPath: E:\Puppet\Puppet-Editor\assets\env\venice_dawn_1_4k.hdr
+      Intensity: 1
+      Angle: 0

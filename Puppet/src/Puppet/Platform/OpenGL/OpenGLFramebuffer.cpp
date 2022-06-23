@@ -109,19 +109,18 @@ namespace Puppet {
 
 	OpenGLFramebuffer::~OpenGLFramebuffer()
 	{
-		RendererID rid = m_RendererID;
-		RendererID DepthAttachment = m_DepthAttachment;
-		Renderer::Submit([rid, DepthAttachment,ColorAttachments=std::move(m_ColorAttachments)]()mutable {
-			glDeleteFramebuffers(1, &rid);
-			glDeleteTextures(ColorAttachments.size(), ColorAttachments.data());
-			glDeleteTextures(1, &DepthAttachment);
+
+		Renderer::Submit([instance = Ref<OpenGLFramebuffer>(this)]()mutable {
+			glDeleteFramebuffers(1, &instance->m_RendererID);
+			glDeleteTextures(instance->m_ColorAttachments.size(), instance->m_ColorAttachments.data());
+			glDeleteTextures(1, &instance->m_DepthAttachment);
 		});
 	}
 
 	void OpenGLFramebuffer::Invalidate()
 	{
-		Ref<OpenGLFramebuffer> instance = this;
-		Renderer::Submit([instance]() mutable {
+
+		Renderer::Submit([instance = Ref<OpenGLFramebuffer>(this)]() mutable {
 			if (instance->m_RendererID)
 			{
 				glDeleteFramebuffers(1, &instance->m_RendererID);
@@ -203,8 +202,7 @@ namespace Puppet {
 
 	void OpenGLFramebuffer::BindTexture(uint32_t attachmentIndex, uint32_t slot) const
 	{
-		Ref<const OpenGLFramebuffer> instance = this;
-		Renderer::Submit([instance, attachmentIndex, slot]() {
+		Renderer::Submit([instance = Ref<const OpenGLFramebuffer>(this), attachmentIndex, slot]() {
 			glBindTextureUnit(slot, instance->m_ColorAttachments[attachmentIndex]);
 		});
 	}
@@ -220,8 +218,7 @@ namespace Puppet {
 
 	void OpenGLFramebuffer::Bind()
 	{
-		Ref<const OpenGLFramebuffer> instance = this;
-		Renderer::Submit([instance]() {
+		Renderer::Submit([instance= Ref<const OpenGLFramebuffer>(this)]() {
 			glBindFramebuffer(GL_FRAMEBUFFER, instance->m_RendererID);
 			glViewport(0, 0, instance->m_Specification.Width, instance->m_Specification.Height);
 		});
@@ -260,8 +257,7 @@ namespace Puppet {
 	{
 		PP_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(),"attachmentIndex > m_ColorAttachments.size()");
 		
-		Ref<OpenGLFramebuffer> instance = this;
-		Renderer::Submit([=]()mutable {
+		Renderer::Submit([instance = Ref<OpenGLFramebuffer>(this), attachmentIndex,value]()mutable {
 			auto& spec = instance->m_ColorAttachmentSpecifications[attachmentIndex];
 			glClearTexImage(instance->m_ColorAttachments[attachmentIndex], 0,
 				Utils::PuppetFBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);

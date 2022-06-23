@@ -15,9 +15,16 @@ namespace Puppet {
 
     Scene::~Scene()
     {
-                
+        m_Registry.clear();
     }
 
+    void Scene::Init()
+    {
+        auto skyboxShader = ShaderLibrary::GetInstance().Get("Skybox");
+        m_SkyboxMaterial = MaterialInstance::Create(Material::Create(skyboxShader));
+        m_SkyboxMaterial->SetFlag(MaterialFlag::DepthTest, false);
+    }
+    
     Entity Scene::CreateEntity(const std::string& name)
     {
         Entity entity{m_Registry.create(),this};
@@ -28,9 +35,29 @@ namespace Puppet {
         entity.AddComponent<TransformComponent>();
         auto& tag = entity.AddComponent<TagComponent>();
         tag.Tag = name.empty() ? "Entity" : name;
+        m_EntityIDMap[idComponent.ID] = entity;
         return entity;
     }
+    Entity Scene::CreateEntityWithID(UUID uuid, const std::string& name, bool runtimeMap)
+    {
+        Entity entity{ m_Registry.create(),this };
 
+        auto& idComponent = entity.AddComponent<IDComponent>();
+        idComponent.ID = uuid;
+
+        entity.AddComponent<TransformComponent>();
+        auto& tag = entity.AddComponent<TagComponent>();
+        tag.Tag = name.empty() ? "Entity" : name;
+
+        PP_CORE_ASSERT(m_EntityIDMap.find(uuid) == m_EntityIDMap.end(), "EntityIDMap already have this entity");
+        m_EntityIDMap[uuid] = entity;
+        return entity;
+
+    }
+    void Scene::DestroyEntity(Entity entity)
+    {
+        m_Registry.destroy((entt::entity)entity);
+    }
     void Scene::OnViewportResize(uint32_t width, uint32_t height)
     {
 
@@ -48,6 +75,12 @@ namespace Puppet {
         }
     }
 
+    void Scene::SetSkybox(const Ref<TextureCube>& skybox)
+    {
+        m_SkyboxTexture = skybox;
+        m_SkyboxMaterial->Set("u_Texture", skybox);
+    }
+
     Entity Scene::GetPrimaryCameraEntity()
     {
         auto view = m_Registry.view<CameraComponent>();
@@ -61,84 +94,129 @@ namespace Puppet {
     }
     void Scene::OnRenderEditor(TimeStep ts, const EditorCamera& editorCamera)
     {
-        SceneRenderer::BeginScene(this, {editorCamera, editorCamera.GetViewMatrix() });
-        {
-            auto group = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
-            for (auto entity : group)
-            {
-                auto [sprite,transformComponent] = group.get<SpriteRendererComponent, TransformComponent>(entity);
-                SceneRenderer::SubmitMesh(transformComponent.GetTransform(), sprite, (int)entity);
-            }
-        }
-        {
-            auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
-            for (auto entity : group)
-            {
-                auto [transformComponent, meshComponent] = group.get<TransformComponent, MeshComponent>(entity);
-                if (meshComponent.m_Mesh)
-                {
+        /////////////////////////////////////////////////////////////////////
+        // RENDER 3D SCENE
+        /////////////////////////////////////////////////////////////////////
 
-                    // TODO: Should we render (logically)
-                    SceneRenderer::SubmitMesh(transformComponent.GetTransform(), meshComponent, (int)entity);
-                }
+        // Process lights
+        {
+            m_LightEnvironment = LightEnvironment();
+            auto lights = m_Registry.group<DirectionalLightComponent>(entt::get<TransformComponent>);
+            uint32_t directionalLightIndex = 0;
+            for (auto entity : lights)
+            {
+                auto [transformComponent, lightComponent] = lights.get<TransformComponent, DirectionalLightComponent>(entity);
+                glm::vec3 direction = -glm::normalize(glm::mat3(transformComponent.GetTransform()) * glm::vec3(1.0f));
+                m_LightEnvironment.DirectionalLights[directionalLightIndex++] =
+                {
+                    direction,
+                    lightComponent.Radiance,
+                    lightComponent.Intensity,
+                    lightComponent.CastShadows
+                };
             }
         }
+
+        // TODO: only one sky light at the moment!
+        {
+            m_Environment = Environment();
+            auto lights = m_Registry.group<SkyLightComponent>(entt::get<TransformComponent>);
+            for (auto entity : lights)
+            {
+                auto [transformComponent, skyLightComponent] = lights.get<TransformComponent, SkyLightComponent>(entity);
+                m_Environment = skyLightComponent.SceneEnvironment;
+                m_EnvironmentIntensity = skyLightComponent.Intensity;
+                SetSkybox(m_Environment.RadianceMap);
+            }
+        }
+
+        m_SkyboxMaterial->Set("u_TextureLod", m_SkyboxLod);
+
+        auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
+        SceneRenderer::BeginScene(this, { editorCamera, editorCamera.GetViewMatrix(),
+            editorCamera.GetNear(),editorCamera.GetFar(),editorCamera.GetFOV() }); // TODO: real values
+        for (auto entity : group)
+        {
+            auto& [meshComponent, transformComponent] = group.get<MeshComponent, TransformComponent>(entity);
+            if (meshComponent.Mesh)
+            {
+                meshComponent.Mesh->OnUpdate(ts);
+
+                // TODO: Should we render (logically)
+                SceneRenderer::SubmitMesh(meshComponent.Mesh, transformComponent.GetTransform());
+            }
+        }
+
         SceneRenderer::EndScene();
+        /////////////////////////////////////////////////////////////////////
     }
 
 
     void Scene::OnRenderRuntime(TimeStep ts)
     {
-        Entity mainCameraEntity = GetPrimaryCameraEntity();
-        if (!mainCameraEntity)
-        {
-            PP_CORE_ASSERT(mainCameraEntity, "Scene does not contain any cameras!");
-            return;
-        }
-        SceneCamera& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
-        glm::mat4 cameraTransform = mainCameraEntity.GetComponent<TransformComponent>().GetTransform();
-        // Update scripts
-        {
-            m_Registry.view<NativeScriptComponent>().each([this,&ts](auto entity, auto& nsc)
-                {
-                    // TODO: Move to Scene::OnScenePlay
-                    if (!nsc.Instance)
-                    {
-                        nsc.Instance = nsc.InstantiateScript();//实例化脚本
-                        nsc.Instance->m_Entity = Entity{ entity, this };
-                        nsc.Instance->OnCreate();//调用脚本
-                    }
-
-                    nsc.Instance->OnUpdate(ts);//调用脚本
-                });
-        }
         
-        SceneRenderer::BeginScene(this, { mainCamera,  glm::inverse(cameraTransform) });
-        auto group = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
+        /////////////////////////////////////////////////////////////////////
+        // RENDER 3D SCENE
+        /////////////////////////////////////////////////////////////////////
+        Entity cameraEntity = GetPrimaryCameraEntity();
+        if (!cameraEntity)
+            return;
+
+        // Process camera entity
+        glm::mat4 cameraViewMatrix = glm::inverse(cameraEntity.GetComponent<TransformComponent>().GetTransform());
+        PP_CORE_ASSERT(cameraEntity, "Scene does not contain any cameras!");
+        SceneCamera& camera = cameraEntity.GetComponent<CameraComponent>();
+        camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+
+        // Process lights
+        {
+            m_LightEnvironment = LightEnvironment();
+            auto lights = m_Registry.group<DirectionalLightComponent>(entt::get<TransformComponent>);
+            uint32_t directionalLightIndex = 0;
+            for (auto entity : lights)
+            {
+                auto [transformComponent, lightComponent] = lights.get<TransformComponent, DirectionalLightComponent>(entity);
+                glm::vec3 direction = -glm::normalize(glm::mat3(transformComponent.GetTransform()) * glm::vec3(1.0f));
+                m_LightEnvironment.DirectionalLights[directionalLightIndex++] =
+                {
+                    direction,
+                    lightComponent.Radiance,
+                    lightComponent.Intensity,
+                    lightComponent.CastShadows
+                };
+            }
+        }
+
+        // TODO: only one sky light at the moment!
+        {
+            m_Environment = Environment();
+            auto lights = m_Registry.group<SkyLightComponent>(entt::get<TransformComponent>);
+            for (auto entity : lights)
+            {
+                auto [transformComponent, skyLightComponent] = lights.get<TransformComponent, SkyLightComponent>(entity);
+                m_Environment = skyLightComponent.SceneEnvironment;
+                m_EnvironmentIntensity = skyLightComponent.Intensity;
+                SetSkybox(m_Environment.RadianceMap);
+            }
+        }
+
+        m_SkyboxMaterial->Set("u_TextureLod", m_SkyboxLod);
+
+        auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
+        SceneRenderer::BeginScene(this, { camera, cameraViewMatrix });
         for (auto entity : group)
         {
-            auto [sprite, transformComponent] = group.get<SpriteRendererComponent, TransformComponent>(entity);
-            SceneRenderer::SubmitMesh(transformComponent.GetTransform(), sprite, (int)entity);
-        }
-        {
-            auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
-            for (auto entity : group)
+            auto [transformComponent, meshComponent] = group.get<TransformComponent, MeshComponent>(entity);
+            if (meshComponent.Mesh)
             {
-                auto [transformComponent, meshComponent] = group.get<TransformComponent, MeshComponent>(entity);
-                if (meshComponent.m_Mesh)
-                {
+                meshComponent.Mesh->OnUpdate(ts);
 
-                    // TODO: Should we render (logically)
-                    SceneRenderer::SubmitMesh(transformComponent.GetTransform(), meshComponent, (int)entity);
-                }
+                // TODO: Should we render (logically)
+                SceneRenderer::SubmitMesh(meshComponent.Mesh, transformComponent.GetTransform(), nullptr);
             }
         }
         SceneRenderer::EndScene();
-    }
-
-    void Scene::DestroyEntity(Entity entity)
-    {
-        m_Registry.destroy((entt::entity)entity);
+        /////////////////////////////////////////////////////////////////////
     }
 
 
@@ -184,11 +262,12 @@ namespace Puppet {
     }
 
     template<>
-    void Scene::OnComponentAdded<PointLightComponent>(Entity entity, PointLightComponent& component)
+    void Scene::OnComponentAdded<DirectionalLightComponent>(Entity entity, DirectionalLightComponent& component)
     {
     }
+
     template<>
-    void Scene::OnComponentAdded<DirectionalLightComponent>(Entity entity, DirectionalLightComponent& component)
+    void Scene::OnComponentAdded<SkyLightComponent>(Entity entity, SkyLightComponent& component)
     {
     }
 }

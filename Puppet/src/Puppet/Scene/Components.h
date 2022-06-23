@@ -82,42 +82,40 @@ namespace Puppet {
 			DestroyScript = [](NativeScriptComponent* nsc) { delete nsc->Instance; nsc->Instance = nullptr; };
 		}
 	};
+
 	struct MeshComponent
 	{
-		MeshComponent() { m_Mesh = CreateRef<Mesh>(); };
-		MeshComponent(const MeshComponent&) = default;
-		MeshComponent(const std::string & path)
-			: Path(path), m_Mesh(CreateRef<Mesh>(path))
+		Ref<Puppet::Mesh> Mesh;
+
+		MeshComponent() = default;
+		MeshComponent(const MeshComponent& other) = default;
+		MeshComponent(const Ref<Puppet::Mesh>& mesh)
+			: Mesh(mesh) {}
+		MeshComponent(const std::string& path)
+			:Mesh(CreateRef<Puppet::Mesh>(path))
 		{
 		}
-		//MeshComponent(const std::filesystem::path& path)
-		//	: Path(path)
-		//{
-		//}
 
-		std::string Path = "None";
-		Ref<Mesh> m_Mesh;
+		operator Ref<Puppet::Mesh>() { return Mesh; }
+	};
+	enum class LightType
+	{
+		None = 0, Directional = 1, Point = 2, Spot = 3
 	};
 
-	class PointLightComponent
+	struct DirectionalLightComponent
 	{
-	public:
-		PointLightComponent() = default;
-		PointLightComponent(const PointLightComponent&) = default;
-		PointLightComponent(float intensity, const glm::vec3& lightColor)
-			: Intensity(intensity), LightColor(lightColor) {}
-
-		float Intensity = 100.0f;
-		glm::vec3 LightColor = { 1.0f, 1.0f, 1.0f };
-	};
-	class DirectionalLightComponent
-	{
-	public:
-		DirectionalLightComponent() = default;
-		DirectionalLightComponent(const DirectionalLightComponent&) = default;
-		DirectionalLightComponent(float intensity)
-			: Intensity(intensity) {}
-
+		glm::vec3 Radiance = { 1.0f, 1.0f, 1.0f };
 		float Intensity = 1.0f;
+		bool CastShadows = true;
+		bool SoftShadows = true;
+		float LightSize = 0.5f; // For PCSS
+	};
+
+	struct SkyLightComponent
+	{
+		Environment SceneEnvironment;
+		float Intensity = 1.0f;
+		float Angle = 0.0f;
 	};
 }

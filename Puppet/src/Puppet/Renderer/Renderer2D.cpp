@@ -47,12 +47,6 @@ namespace Puppet {
 		
 		Renderer2D::Statistics Stats;
 
-		//struct CameraData
-		//{
-		//	glm::mat4 ViewProjection;
-		//};
-		//CameraData CameraBuffer;
-		//Ref<UniformBuffer> CameraUniformBuffer;
 		bool DepthTest = true;
 	};
 
@@ -69,7 +63,6 @@ namespace Puppet {
 			{ShaderDataType::Float2,"a_TexCoord"},
 			{ShaderDataType::Float,"a_TexIndex"},
 			{ShaderDataType::Float,"a_TilingFactor"},
-			{ShaderDataType::Int,"a_EntityID"},
 		};
 		s_Data2D.QuadPipeline = Pipeline::Create(pipelineSpecification);
 
@@ -95,7 +88,7 @@ namespace Puppet {
 		delete[] quadIndices;
 
 		s_Data2D.WhiteTexture = TextureLibrary::GetInstance().Get("WhiteTexture");
-		s_Data2D.TextureShader = ShaderLibrary::GetInstance().Get("Texture2D");
+		s_Data2D.TextureShader = ShaderLibrary::GetInstance().Get("Renderer2D");
 		s_Data2D.TextureShader->Bind();
 		
 		int samplers[s_Data2D.MaxTextureSlots];
@@ -109,9 +102,6 @@ namespace Puppet {
 		s_Data2D.QuadVertexPositions[1] = {  0.5f,-0.5f,0.0f,1.0f };
 		s_Data2D.QuadVertexPositions[2] = {  0.5f, 0.5f,0.0f,1.0f };
 		s_Data2D.QuadVertexPositions[3] = { -0.5f, 0.5f,0.0f,1.0f };
-
-		//s_Data2D.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
-
 	}
 	void Renderer2D::Shutdown()
 	{
@@ -252,7 +242,6 @@ namespace Puppet {
 			s_Data2D.QuadVertexBufferPtr->TexCoord = textureCoords[i];
 			s_Data2D.QuadVertexBufferPtr->TexIndex = textureIndex;
 			s_Data2D.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-			s_Data2D.QuadVertexBufferPtr->EntityID = entityID;
 			s_Data2D.QuadVertexBufferPtr++;
 		}
 
@@ -297,7 +286,6 @@ namespace Puppet {
 			s_Data2D.QuadVertexBufferPtr->TexCoord = textureCoords[i];
 			s_Data2D.QuadVertexBufferPtr->TexIndex = textureIndex;
 			s_Data2D.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-			s_Data2D.QuadVertexBufferPtr->EntityID = entityID;
 			s_Data2D.QuadVertexBufferPtr++;
 		}
 

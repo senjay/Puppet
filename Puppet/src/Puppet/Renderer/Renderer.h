@@ -6,6 +6,7 @@
 #include "Puppet/Camera/EditorCamera.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "Puppet/Mesh/Mesh.h"
 namespace Puppet {
 	class Renderer
 	{
@@ -38,7 +39,10 @@ namespace Puppet {
 		
 		static void BeginRenderPass(Ref<RenderPass> renderPass, bool clear = true);
 		static void EndRenderPass();
-		static void SubmitQuad(Ref<Texture2D> material, const glm::mat4& transform = glm::mat4(1.0f));
+		static void SubmitQuad(Ref<MaterialInstance> material, const glm::mat4& transform = glm::mat4(1.0f));
+		static void SubmitFullscreenQuad(Ref<MaterialInstance> material);
+		static void SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, Ref<MaterialInstance> overrideMaterial = nullptr);
+		static void SubmitMeshWithShader(Ref<Mesh> mesh, const glm::mat4& transform, Ref<Shader> shader);
 		static void DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest = true);
 		static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 	private:

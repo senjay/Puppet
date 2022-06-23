@@ -85,6 +85,8 @@ namespace Puppet {
 		m_Scene = scene;
 
 		m_IsAnimated = scene->mAnimations != nullptr;
+		if (m_IsAnimated)
+			m_AnimationDuration = m_Scene->mAnimations[0]->mDuration;
 		m_MeshShader = m_IsAnimated ? ShaderLibrary::GetInstance().Get("HazelPBR_Anim") : ShaderLibrary::GetInstance().Get("HazelPBR_Static");
 		m_BaseMaterial = Ref<Material>::Create(m_MeshShader);
 		// m_MaterialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial);

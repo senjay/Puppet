@@ -4,6 +4,7 @@
 #include "Pipeline.h"
 #include "RendererAPI.h"
 #include "SceneRenderer.h"
+#include <glad/glad.h>
 namespace Puppet {
 
 	
@@ -22,8 +23,8 @@ namespace Puppet {
 		PP_PROFILE_FUNCTION();
 
 		Renderer::Submit([]() { RenderCommand::Init(); });
-
-
+		TextureLibrary::GetInstance().Init();
+		ShaderLibrary::GetInstance().Init();
 		SceneRenderer::Init();
 
 		// Create fullscreen quad
@@ -105,8 +106,10 @@ namespace Puppet {
 		//clear color ¡¢framebuffer
 		if (clear)
 		{
-			Renderer::Clear();
-			renderPass->GetSpecification().TargetFramebuffer->ClearAttachment(1, -1);
+			
+			const glm::vec4& clearColor = renderPass->GetSpecification().TargetFramebuffer->GetSpecification().ClearColor;
+			Renderer::Clear(clearColor);
+	
 		}
 	}
 
@@ -117,29 +120,108 @@ namespace Puppet {
 		s_Data.m_ActiveRenderPass = nullptr;
 	}
 
-	void Renderer::SubmitQuad(Ref<Texture2D> material, const glm::mat4& transform)
+	void Renderer::SubmitQuad(Ref<MaterialInstance> material, const glm::mat4& transform)
 	{
 		bool depthTest = true;
 		bool cullFace = true;
 		if (material)
 		{
 			material->Bind();
-			//depthTest = material->GetFlag(MaterialFlag::DepthTest);
-			//cullFace = !material->GetFlag(MaterialFlag::TwoSided);
+			depthTest = material->GetFlag(MaterialFlag::DepthTest);
+			cullFace = !material->GetFlag(MaterialFlag::TwoSided);
 
-			//auto shader = material->GetShader();
-			//shader->SetMat4("u_Transform", transform);
+			auto shader = material->GetShader();
+			shader->SetMat4("u_Transform", transform);
 		}
 
-		/*if (cullFace)
+		if (cullFace)
 			Renderer::Submit([]() { glEnable(GL_CULL_FACE); });
 		else
-			Renderer::Submit([]() { glDisable(GL_CULL_FACE); });*/
+			Renderer::Submit([]() { glDisable(GL_CULL_FACE); });
 
 		s_Data.m_FullscreenQuadVertexBuffer->Bind();
 		s_Data.m_FullscreenQuadPipeline->Bind();
 		s_Data.m_FullscreenQuadIndexBuffer->Bind();
 		Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
+	}
+
+	void Renderer::SubmitFullscreenQuad(Ref<MaterialInstance> material)
+	{
+		bool depthTest = true;
+		bool cullFace = true;
+		if (material)
+		{
+			material->Bind();
+			depthTest = material->GetFlag(MaterialFlag::DepthTest);
+			cullFace = !material->GetFlag(MaterialFlag::TwoSided);
+		}
+
+		s_Data.m_FullscreenQuadVertexBuffer->Bind();
+		s_Data.m_FullscreenQuadPipeline->Bind();
+		s_Data.m_FullscreenQuadIndexBuffer->Bind();
+
+		if (cullFace)
+			Renderer::Submit([]() { glEnable(GL_CULL_FACE); });
+		else
+			Renderer::Submit([]() { glDisable(GL_CULL_FACE); });
+
+		Renderer::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
+	}
+
+	void Renderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, Ref<MaterialInstance> overrideMaterial)
+	{
+		mesh->m_VertexBuffer->Bind();
+		mesh->m_Pipeline->Bind();
+		mesh->m_IndexBuffer->Bind();
+
+		auto& materials = mesh->GetMaterials();
+		for (Submesh& submesh : mesh->m_Submeshes)
+		{
+			// Material
+			auto material = overrideMaterial ? overrideMaterial : materials[submesh.MaterialIndex];
+			auto shader = material->GetShader();
+			material->Bind();
+
+			if (mesh->m_IsAnimated)
+			{
+				for (size_t i = 0; i < mesh->m_BoneTransforms.size(); i++)
+				{
+					std::string uniformName = std::string("u_BoneTransforms[") + std::to_string(i) + std::string("]");
+					mesh->m_MeshShader->SetMat4(uniformName, mesh->m_BoneTransforms[i]);
+				}
+			}
+			shader->SetMat4("u_Transform", transform * submesh.Transform);
+
+			Renderer::Submit([submesh, material]() {
+				if (material->GetFlag(MaterialFlag::DepthTest))
+					glEnable(GL_DEPTH_TEST);
+				else
+					glDisable(GL_DEPTH_TEST);
+
+				if (!material->GetFlag(MaterialFlag::TwoSided))
+					Renderer::Submit([]() { glEnable(GL_CULL_FACE); });
+				else
+					Renderer::Submit([]() { glDisable(GL_CULL_FACE); });
+
+				glDrawElementsBaseVertex(GL_TRIANGLES, submesh.IndexCount, GL_UNSIGNED_INT, (void*)(sizeof(uint32_t) * submesh.BaseIndex), submesh.BaseVertex);
+				});
+		}
+	}
+
+	void Renderer::SubmitMeshWithShader(Ref<Mesh> mesh, const glm::mat4& transform, Ref<Shader> shader)
+	{
+		mesh->m_VertexBuffer->Bind();
+		mesh->m_Pipeline->Bind();
+		mesh->m_IndexBuffer->Bind();
+
+		for (Submesh& submesh : mesh->m_Submeshes)
+		{
+			shader->SetMat4("u_Transform", transform * submesh.Transform);
+
+			Renderer::Submit([submesh]() {
+				glDrawElementsBaseVertex(GL_TRIANGLES, submesh.IndexCount, GL_UNSIGNED_INT, (void*)(sizeof(uint32_t) * submesh.BaseIndex), submesh.BaseVertex);
+				});
+		}
 	}
 
 	void Renderer::DrawIndexed(uint32_t count, PrimitiveType type, bool depthTest)

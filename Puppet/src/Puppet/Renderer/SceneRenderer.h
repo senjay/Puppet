@@ -3,13 +3,18 @@
 #include "Puppet/Renderer/RenderPass.h"
 #include "Puppet/Scene/Components.h"
 namespace Puppet {
+	struct SceneRendererOptions
+	{
+		bool ShowGrid = false;
+		bool ShowBoundingBoxes = false;
+	};
 	struct SceneRendererCamera
 	{
-		SceneRendererCamera() = default;
-		SceneRendererCamera(const Camera& camera, const glm::mat4& viewMatrix)
-			:Camera(camera), ViewMatrix(viewMatrix) {};
 		Camera Camera;
 		glm::mat4 ViewMatrix;
+		float Near;
+		float Far;
+		float FOV;
 	};
 	class SceneRenderer
 	{
@@ -19,16 +24,22 @@ namespace Puppet {
 
 		static void BeginScene(const Scene* scene, const SceneRendererCamera& camera);
 		static void EndScene();
-		//TODO :now use quad
-		static void SubmitMesh(const glm::mat4& transform, SpriteRendererComponent& src, int entityid=-1);
-		static void SubmitMesh(const glm::mat4& transform, MeshComponent& src, int entityid = -1);
-		static Ref<RenderPass> GetFinalRenderPass();
+		static std::pair<Ref<TextureCube>, Ref<TextureCube>> CreateEnvironmentMap(const std::string& filepath);
 
-		static RendererID SceneRenderer::GetFinalColorBufferRendererID();
+		static void SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f), Ref<MaterialInstance> overrideMaterial = nullptr);
+		
+		static Ref<RenderPass> GetFinalRenderPass();
+		static Ref<Texture2D> GetFinalColorBuffer(){}
+		static RendererID GetFinalColorBufferRendererID();
+		static SceneRendererOptions& GetOptions();
+
 		static void OnImGuiRender();
 	private:
 		static void FlushDrawList();
+		static void ShadowMapPass();
 		static void GeometryPass();
+		static void CompositePass();
+		static void BloomBlurPass();
 	};
 }
 

@@ -108,6 +108,7 @@ namespace YAML {
 }
 
 namespace Puppet {
+
 	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v)
 	{
 		out << YAML::Flow;
@@ -135,10 +136,28 @@ namespace Puppet {
 		out << YAML::BeginSeq << v.w << v.x << v.y << v.z << YAML::EndSeq;
 		return out;
 	}
+
+	static void SerializeEnvironment(YAML::Emitter& out, const Ref<Scene>& scene)
+	{
+		out << YAML::Key << "Environment";
+		out << YAML::Value;
+		out << YAML::BeginMap; // Environment
+		out << YAML::Key << "AssetPath" << YAML::Value << scene->GetEnvironment().FilePath;
+		const Light& light = scene->GetLight();
+		out << YAML::Key << "Light" << YAML::Value;
+		out << YAML::BeginMap; // Light
+		out << YAML::Key << "Direction" << YAML::Value << light.Direction;
+		out << YAML::Key << "Radiance" << YAML::Value << light.Radiance;
+		out << YAML::Key << "Multiplier" << YAML::Value << light.Multiplier;
+		out << YAML::EndMap; // Light
+		out << YAML::EndMap; // Environment
+	}
+
 	static void SerializeEntity(YAML::Emitter& out, Entity entity)
 	{
+		UUID uuid = entity.GetComponent<IDComponent>().ID;
 		out << YAML::BeginMap; // Entity
-		out << YAML::Key << "Entity" << YAML::Value << "1234124312"; // TODO: Entity UUID goes here
+		out << YAML::Key << "Entity" << YAML::Value << uuid; // TODO: Entity UUID goes here
 
 		if (entity.HasComponent<TagComponent>())
 		{
@@ -187,7 +206,42 @@ namespace Puppet {
 
 			out << YAML::EndMap; // CameraComponent
 		}
+		if (entity.HasComponent<MeshComponent>())
+		{
+			out << YAML::Key << "MeshComponent";
+			out << YAML::BeginMap; // MeshComponent
 
+			auto mesh = entity.GetComponent<MeshComponent>().Mesh;
+			out << YAML::Key << "AssetPath" << YAML::Value << mesh->GetFilePath();
+
+			out << YAML::EndMap; // MeshComponent
+		}
+		if (entity.HasComponent<DirectionalLightComponent>())
+		{
+			out << YAML::Key << "DirectionalLightComponent";
+			out << YAML::BeginMap; // DirectionalLightComponent
+
+			auto& directionalLightComponent = entity.GetComponent<DirectionalLightComponent>();
+			out << YAML::Key << "Radiance" << YAML::Value << directionalLightComponent.Radiance;
+			out << YAML::Key << "CastShadows" << YAML::Value << directionalLightComponent.CastShadows;
+			out << YAML::Key << "SoftShadows" << YAML::Value << directionalLightComponent.SoftShadows;
+			out << YAML::Key << "LightSize" << YAML::Value << directionalLightComponent.LightSize;
+
+			out << YAML::EndMap; // DirectionalLightComponent
+		}
+
+		if (entity.HasComponent<SkyLightComponent>())
+		{
+			out << YAML::Key << "SkyLightComponent";
+			out << YAML::BeginMap; // SkyLightComponent
+
+			auto& skyLightComponent = entity.GetComponent<SkyLightComponent>();
+			out << YAML::Key << "EnvironmentAssetPath" << YAML::Value << skyLightComponent.SceneEnvironment.FilePath;
+			out << YAML::Key << "Intensity" << YAML::Value << skyLightComponent.Intensity;
+			out << YAML::Key << "Angle" << YAML::Value << skyLightComponent.Angle;
+
+			out << YAML::EndMap; // SkyLightComponent
+		}
 		if (entity.HasComponent<SpriteRendererComponent>())
 		{
 			out << YAML::Key << "SpriteRendererComponent";
@@ -209,10 +263,11 @@ namespace Puppet {
 	{
 		YAML::Emitter out;
 		out << YAML::BeginMap;
-		out << YAML::Key << "Scene" << YAML::Value << "Untitled";
+		out << YAML::Key << "Scene" << YAML::Value << m_Scene->GetSceneName();
 
-		//TODO: SerializeEnvironment
-
+		//SerializeEnvironment
+		SerializeEnvironment(out, m_Scene);
+	
 		out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 		m_Scene->m_Registry.each([&](auto entityID)
 			{
@@ -252,6 +307,22 @@ namespace Puppet {
 		m_Scene->m_SceneName = sceneName;
 		PP_CORE_TRACE("Deserializing scene '{0}'", sceneName);
 
+		auto environment = data["Environment"];
+		if (environment)
+		{
+			std::string envPath = environment["AssetPath"].as<std::string>();
+			//m_Scene->SetEnvironment(Environment::Load(envPath));
+
+			auto lightNode = environment["Light"];
+			if (lightNode)
+			{
+				auto& light = m_Scene->GetLight();
+				light.Direction = lightNode["Direction"].as<glm::vec3>();
+				light.Radiance = lightNode["Radiance"].as<glm::vec3>();
+				light.Multiplier = lightNode["Multiplier"].as<float>();
+			}
+		}
+
 		auto entities = data["Entities"];
 		if (entities)
 		{
@@ -266,7 +337,7 @@ namespace Puppet {
 
 				PP_CORE_TRACE("Deserialized entity with ID = {0}, name = {1}", uuid, name);
 
-				Entity deserializedEntity = m_Scene->CreateEntity(name);
+				Entity deserializedEntity = m_Scene->CreateEntityWithID(uuid, name);
 
 				auto transformComponent = entity["TransformComponent"];
 				if (transformComponent)
@@ -299,6 +370,36 @@ namespace Puppet {
 					cc.FixedAspectRatio = cameraComponent["FixedAspectRatio"].as<bool>();
 				}
 
+				auto meshComponent = entity["MeshComponent"];
+				if (meshComponent)
+				{
+					std::string meshPath = meshComponent["AssetPath"].as<std::string>();
+					// TEMP (because script creates mesh component...)
+					if (!deserializedEntity.HasComponent<MeshComponent>())
+						deserializedEntity.AddComponent<MeshComponent>(Ref<Mesh>::Create(meshPath));
+
+					PP_CORE_INFO("  Mesh Asset Path: {0}", meshPath);
+				}
+				auto directionalLightComponent = entity["DirectionalLightComponent"];
+				if (directionalLightComponent)
+				{
+					auto& component = deserializedEntity.AddComponent<DirectionalLightComponent>();
+					component.Radiance = directionalLightComponent["Radiance"].as<glm::vec3>();
+					component.CastShadows = directionalLightComponent["CastShadows"].as<bool>();
+					component.SoftShadows = directionalLightComponent["SoftShadows"].as<bool>();
+					component.LightSize = directionalLightComponent["LightSize"].as<float>();
+				}
+
+				auto skyLightComponent = entity["SkyLightComponent"];
+				if (skyLightComponent)
+				{
+					auto& component = deserializedEntity.AddComponent<SkyLightComponent>();
+					std::string env = skyLightComponent["EnvironmentAssetPath"].as<std::string>();
+					if (!env.empty())
+						component.SceneEnvironment = Environment::Load(env);
+					component.Intensity = skyLightComponent["Intensity"].as<float>();
+					component.Angle = skyLightComponent["Angle"].as<float>();
+				}
 				auto spriteRendererComponent = entity["SpriteRendererComponent"];
 				if (spriteRendererComponent)
 				{

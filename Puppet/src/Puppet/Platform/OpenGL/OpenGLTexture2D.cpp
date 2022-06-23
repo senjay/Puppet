@@ -79,8 +79,7 @@ namespace Puppet {
 		m_Width = width;
 		m_Height = height;
 
-		Ref<OpenGLTexture2D> instance = this;
-		Renderer::Submit([instance, srgb]() mutable
+		Renderer::Submit([instance= Ref<OpenGLTexture2D>(this), srgb]() mutable
 			{
 				// TODO: Consolidate properly
 				if (srgb)
@@ -121,8 +120,8 @@ namespace Puppet {
 	{
 		PP_PROFILE_FUNCTION();
 
-		Renderer::Submit([rid = m_RendererID](){
-			glDeleteTextures(1, &rid);
+		Renderer::Submit([instance = Ref<OpenGLTexture2D>(this)](){
+			glDeleteTextures(1, &instance->m_RendererID);
 		});
 	}
 
@@ -138,19 +137,23 @@ namespace Puppet {
 		PP_CORE_ASSERT(size == m_Width * m_Height * GetBPP(m_Format), "Data must be entire texture!");
 		m_ImageData.Write(data, size);
 		
-		Ref<OpenGLTexture2D> instance = this;
-		Renderer::Submit([instance]() mutable {
+		Renderer::Submit([instance = Ref<OpenGLTexture2D>(this)]() mutable {
 			glTextureSubImage2D(instance->m_RendererID, 0, 0, 0, instance->m_Width, instance->m_Height, PuppetToOpenGLTextureFormat(instance->m_Format), GL_UNSIGNED_BYTE, instance->m_ImageData.Data);
 		});
 		
+	}
+
+	void OpenGLTexture2D::Resize(uint32_t width, uint32_t height)
+	{
+		m_ImageData.Allocate(width * height * Texture::GetBPP(m_Format));
 	}
 
 	void OpenGLTexture2D::Bind(uint32_t slot) const
 	{
 		PP_PROFILE_FUNCTION();
 
-		Renderer::Submit([slot,rid=m_RendererID]() {
-			glBindTextureUnit(slot, rid);
+		Renderer::Submit([instance=Ref<const OpenGLTexture2D>(this),slot]() {
+			glBindTextureUnit(slot, instance->m_RendererID);
 		});
 	}
 
@@ -164,8 +167,8 @@ namespace Puppet {
 	{
 
 		uint32_t levels = Texture::CalculateMipMapCount(width, height);
-		Ref<OpenGLTextureCube> instance = this;
-		Renderer::Submit([instance, levels]() mutable
+		
+		Renderer::Submit([instance = Ref<OpenGLTextureCube>(this), levels]() mutable
 			{
 				glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &instance->m_RendererID);
 				glTextureStorage2D(instance->m_RendererID, levels, PuppetToOpenGLTextureFormat(instance->m_Format), instance->m_Width, instance->m_Height);
@@ -234,8 +237,8 @@ namespace Puppet {
 			faceIndex++;
 		}
 
-		Ref<OpenGLTextureCube> instance = this;
-		Renderer::Submit([instance, faceWidth, faceHeight, faces]() mutable
+		
+		Renderer::Submit([instance = Ref<OpenGLTextureCube>(this), faceWidth, faceHeight, faces]() mutable
 			{
 				glGenTextures(1, &instance->m_RendererID);
 				glBindTexture(GL_TEXTURE_CUBE_MAP, instance->m_RendererID);
@@ -270,15 +273,15 @@ namespace Puppet {
 
 	OpenGLTextureCube::~OpenGLTextureCube()
 	{
-		Renderer::Submit([rid= m_RendererID]() {
-			glDeleteTextures(1, &rid);
+		Renderer::Submit([instance = Ref<OpenGLTextureCube>(this)]() {
+			glDeleteTextures(1, &instance->m_RendererID);
 		});
 	}
 
 	void OpenGLTextureCube::Bind(uint32_t slot) const
 	{
-		Renderer::Submit([slot, rid = m_RendererID]() {
-			glBindTextureUnit(slot, rid);
+		Renderer::Submit([instance = Ref<const OpenGLTextureCube>(this),slot]() {
+			glBindTextureUnit(slot, instance->m_RendererID);
 		});
 	}
 

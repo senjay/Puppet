@@ -34,6 +34,10 @@ namespace Puppet {
 
 		float GetPitch() const { return m_Pitch; }
 		float GetYaw() const { return m_Yaw; }
+		float GetNear()const { return m_NearClip; }
+		float GetFar()const { return m_FarClip; }
+		float GetFOV()const { return m_FOV; }
+
 	private:
 		void UpdateProjection();
 		void UpdateView();

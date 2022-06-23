@@ -87,7 +87,7 @@ namespace Puppet
 		virtual const ShaderUniformBufferDeclaration& GetPSMaterialUniformBuffer() const override { return *m_PSMaterialUniformBuffer; }
 		virtual const ShaderResourceList& GetResources() const override { return m_Resources; }
 	private:
-		RendererID m_RendererID;
+		RendererID m_RendererID{0};
 		std::string m_Name;
 		std::string m_FilePath;
 		bool m_Loaded = false;

@@ -132,7 +132,8 @@ namespace Puppet {
 		std::vector<Ref<MaterialInstance>> GetMaterials() { return m_Materials; }
 		const std::vector<Ref<Texture2D>>& GetTextures() const { return m_Textures; }
 		const std::string& GetFilePath() const { return m_FilePath; }
-
+		const float GetAnimationDuration()const { return m_AnimationDuration; }
+		const float GetAnimationProgress()const { return m_AnimationTime/m_AnimationDuration; }
 		const std::vector<Triangle> GetTriangleCache(uint32_t index) const { return m_TriangleCache.at(index); }
 	private:
 		void BoneTransform(float time);
@@ -179,6 +180,7 @@ namespace Puppet {
 		// Animation
 		bool m_IsAnimated = false;
 		float m_AnimationTime = 0.0f;
+		float m_AnimationDuration=0.0f;
 		float m_WorldTime = 0.0f;
 		float m_TimeMultiplier = 1.0f;
 		bool m_AnimationPlaying = true;

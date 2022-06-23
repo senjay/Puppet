@@ -9,15 +9,22 @@
 #include "Puppet/Core/Timer.h"
 namespace Puppet
 {
-	namespace Utils {
+#define UNIFORM_LOGGING 0
+#if UNIFORM_LOGGING
+#define PP_LOG_UNIFORM(...) PP_CORE_WARN(__VA_ARGS__)
+#else
+#define PP_LOG_UNIFORM
+#endif
 
+	namespace Utils {
 		static GLenum ShaderTypeFromString(const std::string& type)
 		{
 			if (type == "vertex")
 				return GL_VERTEX_SHADER;
 			if (type == "fragment" || type == "pixel")
 				return GL_FRAGMENT_SHADER;
-
+			if (type == "compute")
+				return GL_COMPUTE_SHADER;
 			PP_CORE_ASSERT(false, "Unknown shader type!");
 			return 0;
 		}
@@ -80,7 +87,7 @@ namespace Puppet
 		}
 
 		// Parsing helper functions
-		const char* FindToken(const char* str, const std::string& token)
+		static const char* FindToken(const char* str, const std::string& token)
 		{
 			const char* t = str;
 			while (t = strstr(t, token.c_str()))
@@ -95,12 +102,12 @@ namespace Puppet
 			return nullptr;
 		}
 
-		const char* FindToken(const std::string& string, const std::string& token)
+		static const char* FindToken(const std::string& string, const std::string& token)
 		{
 			return FindToken(string.c_str(), token);
 		}
 
-		std::vector<std::string> SplitString(const std::string& string, const std::string& delimiters)
+		static std::vector<std::string> SplitString(const std::string& string, const std::string& delimiters)
 		{
 			size_t start = 0;
 			size_t end = string.find_first_of(delimiters);
@@ -123,22 +130,22 @@ namespace Puppet
 			return result;
 		}
 
-		std::vector<std::string> SplitString(const std::string& string, const char delimiter)
+		static std::vector<std::string> SplitString(const std::string& string, const char delimiter)
 		{
 			return SplitString(string, std::string(1, delimiter));
 		}
 
-		std::vector<std::string> Tokenize(const std::string& string)
+		static std::vector<std::string> Tokenize(const std::string& string)
 		{
 			return SplitString(string, " \t\n\r");
 		}
 
-		std::vector<std::string> GetLines(const std::string& string)
+		static std::vector<std::string> GetLines(const std::string& string)
 		{
 			return SplitString(string, "\n");
 		}
 
-		std::string GetBlock(const char* str, const char** outPosition)
+		static std::string GetBlock(const char* str, const char** outPosition)
 		{
 			const char* end = strstr(str, "}");
 			if (!end)
@@ -150,7 +157,7 @@ namespace Puppet
 			return std::string(str, length);
 		}
 
-		std::string GetStatement(const char* str, const char** outPosition)
+		static std::string GetStatement(const char* str, const char** outPosition)
 		{
 			const char* end = strstr(str, ";");
 			if (!end)
@@ -162,12 +169,12 @@ namespace Puppet
 			return std::string(str, length);
 		}
 
-		bool StartsWith(const std::string& string, const std::string& start)
+		static bool StartsWith(const std::string& string, const std::string& start)
 		{
 			return string.find(start) == 0;
 		}
 
-		bool IsTypeStringResource(const std::string& type)
+		static bool IsTypeStringResource(const std::string& type)
 		{
 			if (type == "sampler1D")		return true;
 			if (type == "sampler2D")		return true;
@@ -196,24 +203,25 @@ namespace Puppet
 		if (!m_IsCompute)
 			Parse();
 
+		Renderer::Submit([instance=Ref<OpenGLShader>(this)]() mutable{
+			if (instance->m_RendererID)
+				glDeleteProgram(instance->m_RendererID);
 
-		if (m_RendererID)
-			glDeleteProgram(m_RendererID);
+			instance->CompileAndUploadShader();
+			if (!instance->m_IsCompute)
+			{
+				instance->ResolveUniforms();
+				instance->ValidateUniforms();
+			}
 
-		CompileAndUploadShader();
-		if (!m_IsCompute)
-		{
-			ResolveUniforms();
-			ValidateUniforms();
-		}
+			if (instance->m_Loaded)
+			{
+				for (auto& callback : instance->m_ShaderReloadedCallbacks)
+					callback();
+			}
 
-		if (m_Loaded)
-		{
-			for (auto& callback : m_ShaderReloadedCallbacks)
-				callback();
-		}
-
-		m_Loaded = true;
+			instance->m_Loaded = true;
+		});
 	}
 
 	OpenGLShader::~OpenGLShader()
@@ -231,8 +239,8 @@ namespace Puppet
 	void OpenGLShader::Bind() const
 	{
 
-		Renderer::Submit([rid=m_RendererID](){
-			glUseProgram(rid);
+		Renderer::Submit([instance=Ref<const OpenGLShader>(this)](){
+			glUseProgram(instance->m_RendererID);
 		});
 	}
 	void OpenGLShader::UnBind() const
@@ -337,55 +345,61 @@ namespace Puppet
 
 	void OpenGLShader::SetMat4FromRenderThread(const std::string& name, const glm::mat4& value, bool bind)
 	{
-		if (bind)
-		{
-			UploadUniformMat4(name, value);
-		}
-		else
-		{
-			int location = GetUniformLocation(name);
-			UploadUniformMat4(location, value);
-		}
+		UploadUniformMat4(name, value);
 	}
 	 
 	void OpenGLShader::UploadUniformInt(const std::string& name, int value)
 	{
+		glUseProgram(m_RendererID);
 		GLint location = GetUniformLocation(name);
+		if(location!=-1)
 		glUniform1i(location, value);
 	}
 
 	void OpenGLShader::UploadUniformIntArray(const std::string& name, int* values, uint32_t count)
 	{
+		glUseProgram(m_RendererID);
 		GLint location = GetUniformLocation(name);
+		if (location != -1)
 		glUniform1iv(location, count, values);
 	}
 
 	void OpenGLShader::UploadUniformFloat(const std::string& name, float value)
 	{
+		glUseProgram(m_RendererID);
 		GLint location = GetUniformLocation(name);
+		if (location != -1)
 		glUniform1f(location, value);
 	}
 
 	void OpenGLShader::UploadUniformFloat2(const std::string& name, const glm::vec2& value)
 	{
+		glUseProgram(m_RendererID);
 		GLint location = GetUniformLocation(name);
+		if(location!=-1)
 		glUniform2f(location, value.x, value.y);
 	}
 
 	void OpenGLShader::UploadUniformFloat3(const std::string& name, const glm::vec3& value)
 	{
+		glUseProgram(m_RendererID);
 		GLint location = GetUniformLocation(name);
+		if (location != -1)
 		glUniform3f(location, value.x, value.y, value.z);
 	}
 
 	void OpenGLShader::UploadUniformFloat4(const std::string& name, const glm::vec4& value)
 	{
+		glUseProgram(m_RendererID);
 		GLint location = GetUniformLocation(name);
+		if (location != -1)
 		glUniform4f(location, value.x, value.y, value.z, value.w);
 	}
 	void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix)
 	{
+		glUseProgram(m_RendererID);
 		GLint location = GetUniformLocation(name);
+		if (location != -1)
 		glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 	}
 
@@ -393,7 +407,9 @@ namespace Puppet
 
 	void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix)
 	{
+		glUseProgram(m_RendererID);
 		GLint location = GetUniformLocation(name);
+		if (location != -1)
 		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 	}
 
@@ -612,8 +628,7 @@ namespace Puppet
 	{
 		int32_t result = glGetUniformLocation(m_RendererID, name.c_str());
 		if (result == -1)
-			PP_CORE_WARN("Could not find uniform '{0}' in shader", name);
-
+			PP_LOG_UNIFORM("Could not find uniform '{0}' in shader{1}", name,m_FilePath);
 		return result;
 	}
 

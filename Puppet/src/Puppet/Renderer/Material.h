@@ -160,6 +160,7 @@ namespace Puppet {
 			PP_CORE_ASSERT(decl, "Could not find uniform with name 'x'");
 			uint32_t slot = decl->GetRegister();
 			PP_CORE_ASSERT(slot < m_Textures.size(), "Texture slot is invalid!");
+
 			return Ref<T>(m_Textures[slot]);
 		}
 
@@ -173,10 +174,20 @@ namespace Puppet {
 			uint32_t slot = decl->GetRegister();
 			if (slot >= m_Textures.size())
 				return nullptr;
-
-			return Ref<T>(m_Textures[slot]);
+			return m_Textures[slot];
 		}
 
+		int TryGetResourceSlot(const std::string& name)
+		{
+			auto decl = m_Material->FindResourceDeclaration(name);
+			if (!decl)
+				return -1;
+
+			uint32_t slot = decl->GetRegister();
+			if (slot >= m_Textures.size())
+				return -1;
+			return slot;
+		}
 
 		void Bind();
 
