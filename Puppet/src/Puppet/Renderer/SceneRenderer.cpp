@@ -130,6 +130,10 @@ namespace Puppet {
 		s_Data.GridMaterial->Set("u_Scale", gridScale);
 		s_Data.GridMaterial->Set("u_Res", gridSize);
 
+		// Outline
+		auto outlineShader = ShaderLibrary::GetInstance().Get("Outline");
+		s_Data.OutlineMaterial = MaterialInstance::Create(Material::Create(outlineShader));
+		s_Data.OutlineMaterial->SetFlag(MaterialFlag::DepthTest, false);
 
 		s_Data.ShadowMapShader = ShaderLibrary::GetInstance().Get("ShadowMap");
 		FramebufferSpecification shadowMapFramebufferSpec;
@@ -245,6 +249,11 @@ namespace Puppet {
 	{
 		s_Data.DrawList.push_back({ mesh,overrideMaterial,transform });
 		s_Data.ShadowPassDrawList.push_back({ mesh, overrideMaterial, transform });
+	}
+	void SceneRenderer::SubmitSelectedMesh(Ref<Mesh> mesh, const glm::mat4& transform)
+	{
+		s_Data.SelectedMeshDrawList.push_back({ mesh, nullptr, transform });
+		s_Data.ShadowPassDrawList.push_back({ mesh, nullptr, transform });
 	}
 	Ref<RenderPass> SceneRenderer::GetFinalRenderPass()
 	{
@@ -443,7 +452,7 @@ namespace Puppet {
 		{
 			Renderer::Submit([]()
 				{
-					glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+					glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
 				});
 		}
 
@@ -615,13 +624,13 @@ namespace Puppet {
 					glDisable(GL_DEPTH_TEST);
 				});
 
-			// Draw outline here
+			// Draw outline line here
 			s_Data.OutlineMaterial->Set("u_ViewProjection", viewProjection);
 			for (auto& dc : s_Data.SelectedMeshDrawList)
 			{
 				Renderer::SubmitMesh(dc.Mesh, dc.Transform, s_Data.OutlineMaterial);
 			}
-
+			// Draw outline point here
 			Renderer::Submit([]()
 				{
 					glPointSize(10);

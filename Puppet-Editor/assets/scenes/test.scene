@@ -6,30 +6,21 @@ Environment:
     Radiance: [0, 0, 0]
     Multiplier: 1
 Entities:
-  - Entity: 123412431
+  - Entity: 4227808825693931970
     TagComponent:
-      Tag: Left
+      Tag: plane
     TransformComponent:
-      Translation: [-0.354999989, 0, 0.349999994]
-      Rotation: [0, -0.0137077849, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [1, 0, 0.949807167, 1]
-  - Entity: 12341243
-    TagComponent:
-      Tag: Right
-    TransformComponent:
-      Translation: [0.351999998, 0, 0.349999994]
-      Rotation: [0, 0.0137077849, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [0.54842025, 0, 0.586872578, 1]
+      Translation: [0, -3.91822338, 0]
+      Rotation: [0, 0, 0]
+      Scale: [100, 100, 100]
+    MeshComponent:
+      AssetPath: E:\Puppet\Puppet-Editor\assets\models\Plane.obj
   - Entity: 1234124
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [0, 1.70000005, 4]
-      Rotation: [-0.00706712436, 0, 0]
+      Translation: [-197.781662, 44.3201103, -23.2823391]
+      Rotation: [173.812088, -75.0797729, 180]
       Scale: [1, 1, 1]
     CameraComponent:
       Camera:
@@ -42,40 +33,31 @@ Entities:
         OrthographicFar: 1
       Primary: true
       FixedAspectRatio: false
-  - Entity: 12341
+  - Entity: 14781922861557472255
     TagComponent:
-      Tag: Top
+      Tag: box
     TransformComponent:
-      Translation: [0, 0.5, 0]
-      Rotation: [0.027415568, 0.0137077849, -7.35601191e-10]
-      Scale: [0.999999881, 0.999999881, 0.999999642]
-    SpriteRendererComponent:
-      Color: [0.876447856, 0, 0.834712803, 1]
-  - Entity: 12341243124
-    TagComponent:
-      Tag: red
-    TransformComponent:
-      Translation: [1.41274774, 0.139960766, 0.298873156]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [1, 0, 0, 1]
+      Translation: [6.80739784, 24.3199997, 1.60987687]
+      Rotation: [0, 0, 0]
+      Scale: [13.1000004, 27.3999996, 15.6999998]
+    MeshComponent:
+      AssetPath: E:\Puppet\Puppet-Editor\assets\models\Box.obj
   - Entity: 14277674676943996463
     TagComponent:
       Tag: model
     TransformComponent:
-      Translation: [0, -8.60000038, 0]
+      Translation: [-21.9599991, 11.1000004, 14]
       Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Scale: [10, 10, 10]
     MeshComponent:
-      AssetPath: ./assets/models/nanosuit/nanosuit.obj
+      AssetPath: E:\Puppet\Puppet-Editor\assets\models\Sphere.obj
   - Entity: 8144424856721072898
     TagComponent:
       Tag: Directlight
     TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Translation: [12.1147251, 2.44371843, -7.79285669]
+      Rotation: [25.2885838, -55.5866776, -88.4557724]
+      Scale: [0.999992847, 1.00000477, 1.00000668]
     DirectionalLightComponent:
       Radiance: [1, 1, 1]
       CastShadows: true
@@ -90,5 +72,5 @@ Entities:
       Scale: [1, 1, 1]
     SkyLightComponent:
       EnvironmentAssetPath: E:\Puppet\Puppet-Editor\assets\env\venice_dawn_1_4k.hdr
-      Intensity: 1
+      Intensity: 1.04999995
       Angle: 0

@@ -27,7 +27,7 @@ namespace Puppet {
 		static std::pair<Ref<TextureCube>, Ref<TextureCube>> CreateEnvironmentMap(const std::string& filepath);
 
 		static void SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f), Ref<MaterialInstance> overrideMaterial = nullptr);
-		
+		static void SubmitSelectedMesh(Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f));
 		static Ref<RenderPass> GetFinalRenderPass();
 		static Ref<Texture2D> GetFinalColorBuffer(){}
 		static RendererID GetFinalColorBufferRendererID();

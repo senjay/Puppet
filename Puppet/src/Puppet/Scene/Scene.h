@@ -54,7 +54,7 @@ namespace Puppet {
 		void OnRuntimeStart() { m_IsPlaying = true; }
 		void OnRuntimeStop() {m_IsPlaying = false; }
 
-
+		
 		const Environment& GetEnvironment() const { return m_Environment; }
 		void SetSkybox(const Ref<TextureCube>& skybox);
 
@@ -75,7 +75,8 @@ namespace Puppet {
 		{
 			return m_Registry.view<T>();
 		}
-	
+		
+		void SetSelectEntity(entt::entity entity) { m_SelectedEntity = entity; }
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);

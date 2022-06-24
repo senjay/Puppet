@@ -420,7 +420,10 @@ namespace Puppet {
 				}
 			}
 			if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt) && m_SceneState != SceneState::Play)
+			{
 				m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+				m_ActiveScene->SetSelectEntity(m_HoveredEntity);
+			}
 			
 		}
 		return false;

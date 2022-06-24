@@ -142,8 +142,10 @@ namespace Puppet {
             {
                 meshComponent.Mesh->OnUpdate(ts);
 
-                // TODO: Should we render (logically)
-                SceneRenderer::SubmitMesh(meshComponent.Mesh, transformComponent.GetTransform());
+                if (m_SelectedEntity == entity)
+                    SceneRenderer::SubmitSelectedMesh(meshComponent.Mesh, transformComponent.GetTransform());
+                else
+                    SceneRenderer::SubmitMesh(meshComponent.Mesh, transformComponent.GetTransform());
             }
         }
 
