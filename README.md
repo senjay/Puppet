@@ -1,32 +1,41 @@
+![1](.\Screenshot\2.png)
+
+
+![2](.\Screenshot\4.png)
+
+
+
+
+
 ### 一、Render Pipeline
 
 #### 1.Render Pass:
 
-1. Input: Framebuffer spceification
-2. Pass: shadow、geo、post processing......
-3. output: framebuffer
+- Input: Framebuffer spceification
+- Pass: shadow、geo、post processing......
+- output: framebuffer
 
 #### 2. Scene renderer:
 
-1. Init:
+- Init:
 
-	初始化各个render Pass
+  初始化各个render Pass
 
-2. BeginScene:
+- BeginScene:
 
-	设置场景参数:light、camera...
+  设置场景参数:light、camera...
 
-3. Submit:
+- Submit:
 
-	提交模型，放入drawCommand
+  提交模型，放入drawCommand
 
-4. EndScene:
-	
-	Flush drawCommand
-	
-	1）处理各个RenderPass(有些可并行)
+- EndScene:
 
-	2）合成最终的framebuffer
+  Flush drawCommand
+
+  1. 处理各个RenderPass(有些可并行)
+
+  2. 合成最终的framebuffer
 
 #### 3. Render Command:
 
@@ -38,32 +47,24 @@
 
 
 
-**Math:** glm
+- **Math:** glm
 
-**OpenGL:** glad、glfw
+- **OpenGL:** glad、glfw
 
-**UI:** imgui、ImGuizmo
+- **UI:** imgui、ImGuizmo
 
-**SceneSerializer:** yaml-cpp
+- **SceneSerializer:** yaml-cpp
 
-**Image:** stb_image
+- **Image:** stb_image
 
-**ECS:** entt
+- **ECS:** entt
 
-**Cross Platfrom Shader:** VulkanSDK(spir-v)
+- **Cross Platfrom Shader:** VulkanSDK(spir-v)
 
 
 
 
 ### 三、build
 
-premake5-alpha16
+- premake5-alpha16
 
-
-
-
-### 四、TODO
-
-1. Memory Alloctor
-2. Jobsystem
-3. FrameGraph
