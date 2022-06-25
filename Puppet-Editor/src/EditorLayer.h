@@ -67,7 +67,7 @@ namespace Puppet
 
 		//window
 		bool b_ShowContentBrowser = true;
-		bool b_ShowPassWindow = true;
+		bool b_ShowPassWindow = false;
 	};
 }
 
