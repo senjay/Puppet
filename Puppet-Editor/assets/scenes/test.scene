@@ -2,8 +2,8 @@ Scene: TestScene
 Environment:
   AssetPath: E:\Puppet\Puppet-Editor\assets\env\venice_dawn_1_4k.hdr
   Light:
-    Direction: [0, 0, 0]
-    Radiance: [0, 0, 0]
+    Direction: [-5.9000001, -1.5, 0]
+    Radiance: [0, 4.69999981, 0]
     Multiplier: 1
 Entities:
   - Entity: 4227808825693931970
@@ -19,8 +19,8 @@ Entities:
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [-197.781662, 44.3201103, -23.2823391]
-      Rotation: [173.812088, -75.0797729, 180]
+      Translation: [-198.709595, 41.1334724, -23.2008286]
+      Rotation: [174.912338, -14.4392338, 180]
       Scale: [1, 1, 1]
     CameraComponent:
       Camera:
@@ -37,7 +37,7 @@ Entities:
     TagComponent:
       Tag: box
     TransformComponent:
-      Translation: [6.80739784, 24.3199997, 1.60987687]
+      Translation: [19.2223434, 24.3199997, 1.60987663]
       Rotation: [0, 0, 0]
       Scale: [13.1000004, 27.3999996, 15.6999998]
     MeshComponent:
@@ -46,23 +46,23 @@ Entities:
     TagComponent:
       Tag: model
     TransformComponent:
-      Translation: [-21.9599991, 11.1000004, 14]
+      Translation: [-21.9599991, -3.51039505, -16.2139568]
       Rotation: [0, 0, 0]
       Scale: [10, 10, 10]
     MeshComponent:
-      AssetPath: E:\Puppet\Puppet-Editor\assets\models\Sphere.obj
+      AssetPath: E:\Puppet\Puppet-Editor\assets\models\nanosuit\nanosuit.obj
   - Entity: 8144424856721072898
     TagComponent:
       Tag: Directlight
     TransformComponent:
-      Translation: [12.1147251, 2.44371843, -7.79285669]
-      Rotation: [25.2885838, -55.5866776, -88.4557724]
+      Translation: [12.1147251, 1.44000006, -7.79285669]
+      Rotation: [14.717227, -9.54224777, -11.6595993]
       Scale: [0.999992847, 1.00000477, 1.00000668]
     DirectionalLightComponent:
-      Radiance: [1, 1, 1]
+      Radiance: [0.830115795, 0.256406426, 0.774738669]
       CastShadows: true
       SoftShadows: true
-      LightSize: 0.5
+      LightSize: 14.6999998
   - Entity: 2675226757711589532
     TagComponent:
       Tag: Sky Light
@@ -72,5 +72,5 @@ Entities:
       Scale: [1, 1, 1]
     SkyLightComponent:
       EnvironmentAssetPath: E:\Puppet\Puppet-Editor\assets\env\venice_dawn_1_4k.hdr
-      Intensity: 1.04999995
+      Intensity: 0.910000026
       Angle: 0

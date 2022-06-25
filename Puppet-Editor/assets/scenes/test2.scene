@@ -1,0 +1,47 @@
+Scene: TestScene
+Environment:
+  AssetPath: ""
+  Light:
+    Direction: [0, 0, 0]
+    Radiance: [0, 0, 0]
+    Multiplier: 1
+Entities:
+  - Entity: 1003397394528321432
+    TagComponent:
+      Tag: plane
+    TransformComponent:
+      Translation: [0, -0.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [7.69999981, 22.2999992, 11.8000002]
+    MeshComponent:
+      AssetPath: E:\Puppet\Puppet-Editor\assets\models\Plane.obj
+  - Entity: 1466253255075231844
+    TagComponent:
+      Tag: Directional Light
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [-29.269331, -48.9060402, -46.6739616]
+      Scale: [1, 1.89999998, 1]
+    DirectionalLightComponent:
+      Radiance: [1, 1, 1]
+      CastShadows: true
+      SoftShadows: true
+      LightSize: 1
+  - Entity: 1558695629108539653
+    TagComponent:
+      Tag: sphere
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      AssetPath: E:\Puppet\Puppet-Editor\assets\models\Sphere.obj
+  - Entity: 7831763868560449876
+    TagComponent:
+      Tag: sphere2
+    TransformComponent:
+      Translation: [-0.3620556, -0.0939853787, -1.56505072]
+      Rotation: [0, 0, 0]
+      Scale: [0.5, 0.5, 0.5]
+    MeshComponent:
+      AssetPath: E:\Puppet\Puppet-Editor\assets\models\Sphere.obj
