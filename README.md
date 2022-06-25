@@ -1,7 +1,7 @@
-![1](.\Screenshot\2.png)
+![1](/Screenshot/2.png)
 
 
-![2](.\Screenshot\4.png)
+![2](/Screenshot/4.png)
 
 
 
