@@ -1,6 +1,6 @@
 #include "ContentBrowserPanel.h"
 #include "../IconManager/IconManager.h"
-#include <imgui/imgui.h>
+#include <imgui.h>
 namespace Puppet
 {
 	extern const std::filesystem::path g_AssetPath = "assets";

@@ -48,6 +48,7 @@ namespace Puppet {
 		void OnUpdate(TimeStep ts){}
 		void OnRenderRuntime(TimeStep ts);
 		void OnRenderEditor(TimeStep ts, const EditorCamera& editorCamera);
+		void OnRenderRuntimeEditor(TimeStep ts, const EditorCamera& editorCamera);
 		void OnEvent(Event& e){}
 		void OnViewportResize(uint32_t width, uint32_t height);
 		// Runtime

@@ -3,7 +3,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <Puppet.h>
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Puppet/Camera/EditorCamera.h"
@@ -64,12 +64,10 @@ namespace Puppet
 		int m_FPS;
 
 		Ref<Texture2D> m_IconPlay, m_IconStop;
-		// PBR params
-		bool m_RadiancePrefilter = false;
-		float m_EnvMapRotation = 0.0f;
 
 		//window
 		bool b_ShowContentBrowser = true;
+		bool b_ShowPassWindow = true;
 	};
 }
 

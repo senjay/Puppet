@@ -28,7 +28,7 @@ uniform bool u_EnableBloom;
 
 void main()
 {
-#if 1
+#if 0
 	const float gamma     = 2.2;
 	const float pureWhite = 1.0;
 

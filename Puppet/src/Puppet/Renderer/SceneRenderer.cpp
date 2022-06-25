@@ -7,6 +7,7 @@
 #include "Puppet/Library/TextureLibrary.h"
 #include "Puppet/Library/ShaderLibrary.h"
 #include "Puppet/Library/UniformBufferLibrary.h"
+#include "Puppet/ImGui/ImGuiWrapper.h"
 #include <glad/glad.h>
 namespace Puppet {
 
@@ -22,7 +23,6 @@ namespace Puppet {
 			Environment SceneEnvironment;
 			float SceneEnvironmentIntensity;
 			LightEnvironment SceneLightEnvironment;
-			Light ActiveLight;
 		} SceneData;
 
 		Ref<Texture2D> BRDFLUT;
@@ -52,7 +52,7 @@ namespace Puppet {
 		float CascadeTransitionFade = 1.0f;
 		bool CascadeFading = true;
 
-		bool EnableBloom = false;
+		bool EnableBloom = true;
 		float BloomThreshold = 1.5f;
 
 		glm::vec2 FocusPoint = { 0.5f, 0.5f };
@@ -74,6 +74,8 @@ namespace Puppet {
 		Ref<MaterialInstance> OutlineMaterial;
 
 		SceneRendererOptions Options;
+
+		Ref<Framebuffer>GeoMutiSampleFramebuffer;
 	};
 	
 	static SceneRendererData s_Data;
@@ -121,6 +123,10 @@ namespace Puppet {
 		s_Data.BRDFLUT = Texture2D::Create("assets/textures/BRDF_LUT.tga");
 
 
+		FramebufferSpecification geoMutiSampleFramebufferSpec;
+		geoMutiSampleFramebufferSpec.Attachments = { FramebufferTextureFormat::RGBA16F, FramebufferTextureFormat::RGBA16F, FramebufferTextureFormat::Depth };
+		geoMutiSampleFramebufferSpec.ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
+		s_Data.GeoMutiSampleFramebuffer= Framebuffer::Create(geoMutiSampleFramebufferSpec);
 
 		// Grid
 		auto gridShader = ShaderLibrary::GetInstance().Get("Grid");
@@ -166,6 +172,7 @@ namespace Puppet {
 	{
 		s_Data.GeoPass->GetSpecification().TargetFramebuffer->Resize(width, height);
 		s_Data.CompositePass->GetSpecification().TargetFramebuffer->Resize(width, height);
+		s_Data.GeoMutiSampleFramebuffer->Resize(width,height);
 	}
 	void SceneRenderer::BeginScene(const Scene* scene, const SceneRendererCamera& camera)
 	{
@@ -174,7 +181,6 @@ namespace Puppet {
 		s_Data.SceneData.SkyboxMaterial = scene->m_SkyboxMaterial;
 		s_Data.SceneData.SceneEnvironment = scene->m_Environment;
 		s_Data.SceneData.SceneEnvironmentIntensity = scene->m_EnvironmentIntensity;
-		s_Data.SceneData.ActiveLight = scene->m_Light;
 		s_Data.SceneData.SceneLightEnvironment = scene->m_LightEnvironment;
 	}
 	void SceneRenderer::EndScene()
@@ -272,8 +278,10 @@ namespace Puppet {
 		PP_CORE_ASSERT(!s_Data.ActiveScene);
 		ShadowMapPass();
 		GeometryPass();
+		Renderer::WaitAndRender();
+		s_Data.GeoMutiSampleFramebuffer->CopyFromOther(s_Data.GeoPass->GetSpecification().TargetFramebuffer);
 		CompositePass();
-		//	BloomBlurPass();
+		//BloomBlurPass();
 		s_Data.DrawList.clear();
 		s_Data.SelectedMeshDrawList.clear();
 		s_Data.ShadowPassDrawList.clear();
@@ -679,7 +687,7 @@ namespace Puppet {
 		s_Data.CompositeShader->SetFloat2("u_ViewportSize", glm::vec2(compositeBuffer->GetWidth(), compositeBuffer->GetHeight()));
 		s_Data.CompositeShader->SetFloat2("u_FocusPoint", s_Data.FocusPoint);
 		s_Data.CompositeShader->SetInt("u_TextureSamples", s_Data.GeoPass->GetSpecification().TargetFramebuffer->GetSpecification().Samples);
-		s_Data.CompositeShader->SetFloat("u_BloomThreshold", s_Data.BloomThreshold);
+		//s_Data.CompositeShader->SetFloat("u_BloomThreshold", s_Data.BloomThreshold);
 		s_Data.GeoPass->GetSpecification().TargetFramebuffer->BindTexture();
 		Renderer::Submit([]()
 			{
@@ -713,7 +721,7 @@ namespace Puppet {
 			else
 			{
 				auto fb = s_Data.CompositePass->GetSpecification().TargetFramebuffer;
-				auto id = fb->GetColorAttachmentRendererID(1);
+				auto id = fb->GetColorAttachmentRendererID(0);
 				Renderer::Submit([id]()
 					{
 						glBindTextureUnit(0, id);
@@ -730,8 +738,8 @@ namespace Puppet {
 			s_Data.BloomBlendShader->SetFloat("u_Exposure", s_Data.SceneData.SceneCamera.Camera.GetExposure());
 			s_Data.BloomBlendShader->SetBool("u_EnableBloom", s_Data.EnableBloom);
 
-			s_Data.CompositePass->GetSpecification().TargetFramebuffer->BindTexture(0);
-			s_Data.BloomBlurPass[index]->GetSpecification().TargetFramebuffer->BindTexture(1);
+			s_Data.CompositePass->GetSpecification().TargetFramebuffer->BindTexture(0,0);
+			s_Data.BloomBlurPass[index]->GetSpecification().TargetFramebuffer->BindTexture(0,1);
 
 			Renderer::SubmitFullscreenQuad(nullptr);
 			Renderer::EndRenderPass();
@@ -739,9 +747,60 @@ namespace Puppet {
 	}
 	
 
-	void SceneRenderer::OnImGuiRender()
+	void SceneRenderer::OnImGuiRender(bool *open)
 	{
+		if (!*open)return;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+		ImGui::Begin("Shadow Pass");
+		static int cascadeIndex = 0;
+		auto Shadowfb = s_Data.ShadowMapRenderPass[cascadeIndex]->GetSpecification().TargetFramebuffer;
+		ImGuiUtils::BeginPropertyGrid();
+		ImGuiUtils::PropertySlider("Cascade Index", cascadeIndex, 0, 3);
+		ImGuiUtils::EndPropertyGrid();
+		ImGui::Image((ImTextureID)Shadowfb->GetDepthAttachmentRendererID(), ImGui::GetContentRegionAvail(), { 0, 1 }, { 1, 0 });
+		ImGui::End();
 
+		ImGui::Begin("Geo Pass");
+		static int Index = 0;
+		std::string label = "color";
+		auto Geofb = s_Data.GeoMutiSampleFramebuffer;
+		int id = -1;
+		if (Index <=0)
+		{
+			id = Geofb->GetColorAttachmentRendererID(Index);
+			label = "color";
+		}
+		else
+		{
+			id = Geofb->GetDepthAttachmentRendererID();
+			label = "depeth";
+		}
+		ImGuiUtils::BeginPropertyGrid();
+		ImGuiUtils::PropertySlider(label.c_str(), Index, 0, 1);
+		ImGuiUtils::EndPropertyGrid();
+		ImGui::Image((ImTextureID)id, ImGui::GetContentRegionAvail(), { 0, 1 }, { 1, 0 });
+		ImGui::End();
+
+		ImGui::Begin("Bloom Blur");
+		static int BIndex = 0;
+		int bloomblurTexid = -1;
+		if (BIndex == 0)
+		{
+			bloomblurTexid = s_Data.BloomBlurPass[0]->GetSpecification().TargetFramebuffer->GetColorAttachmentRendererID();
+		}
+		else
+			bloomblurTexid = s_Data.BloomBlurPass[1]->GetSpecification().TargetFramebuffer->GetColorAttachmentRendererID();
+		ImGuiUtils::BeginPropertyGrid();
+		ImGuiUtils::PropertySlider("Bloom Blur", BIndex, 0, 1);
+		ImGuiUtils::EndPropertyGrid();
+		ImGui::Image((ImTextureID)bloomblurTexid, ImGui::GetContentRegionAvail(), { 0, 1 }, { 1, 0 });
+		ImGui::End();
+
+		ImGui::Begin("Bloom Blend");
+		auto bloomblendfb = s_Data.BloomBlendPass->GetSpecification().TargetFramebuffer;
+		ImGui::Image((ImTextureID)bloomblendfb->GetColorAttachmentRendererID(), ImGui::GetContentRegionAvail(), { 0, 1 }, { 1, 0 });
+		ImGui::End();
+		ImGui::PopStyleVar();
 	}
 }
 

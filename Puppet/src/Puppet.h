@@ -1,5 +1,6 @@
 #pragma once
 #include "Puppet/Debug/Instrumentor.h"
+#include <imgui.h>
 
 #include "Puppet/Core/Base.h"
 #include "Puppet/Core/TimeStep.h"

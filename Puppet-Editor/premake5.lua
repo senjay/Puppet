@@ -20,6 +20,7 @@ project "Puppet-Editor"
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.assimp}",
+		"%{IncludeDir.ImGui}",
 	}
 	links
 	{

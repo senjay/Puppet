@@ -238,6 +238,80 @@ namespace Puppet {
     }
 
 
+    void Scene::OnRenderRuntimeEditor(TimeStep ts, const EditorCamera& editorCamera)
+    {
+
+        //Update Script
+        //TODO:Script Engine
+        {
+            m_Registry.view<NativeScriptComponent>().each([this, &ts](auto entity, auto& nsc)
+                {
+                    // TODO: Move to Scene::OnScenePlay
+                    if (!nsc.Instance)
+                    {
+                        nsc.Instance = nsc.InstantiateScript();//实例化脚本
+                        nsc.Instance->m_Entity = Entity{ entity, this };
+                        nsc.Instance->OnCreate();//调用脚本
+                    }
+
+                    nsc.Instance->OnUpdate(ts);//调用脚本
+                });
+        }
+        // Process lights
+        {
+            m_LightEnvironment = LightEnvironment();
+            auto lights = m_Registry.group<DirectionalLightComponent>(entt::get<TransformComponent>);
+            uint32_t directionalLightIndex = 0;
+            for (auto entity : lights)
+            {
+                auto [transformComponent, lightComponent] = lights.get<TransformComponent, DirectionalLightComponent>(entity);
+                glm::vec3 direction = -glm::normalize(glm::mat3(transformComponent.GetTransform()) * glm::vec3(1.0f));
+                m_LightEnvironment.DirectionalLights[directionalLightIndex++] =
+                {
+                    direction,
+                    lightComponent.Radiance,
+                    lightComponent.Intensity,
+                    lightComponent.CastShadows
+                };
+            }
+        }
+
+        // TODO: only one sky light at the moment!
+        {
+            m_Environment = Environment();
+            auto lights = m_Registry.group<SkyLightComponent>(entt::get<TransformComponent>);
+            for (auto entity : lights)
+            {
+                auto [transformComponent, skyLightComponent] = lights.get<TransformComponent, SkyLightComponent>(entity);
+                m_Environment = skyLightComponent.SceneEnvironment;
+                m_EnvironmentIntensity = skyLightComponent.Intensity;
+                SetSkybox(m_Environment.RadianceMap);
+            }
+        }
+
+        m_SkyboxMaterial->Set("u_TextureLod", m_SkyboxLod);
+
+        auto group = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
+        SceneRenderer::BeginScene(this, { editorCamera, editorCamera.GetViewMatrix(),
+            editorCamera.GetNear(),editorCamera.GetFar(),editorCamera.GetFOV() }); // TODO: real values
+        for (auto entity : group)
+        {
+            auto& [meshComponent, transformComponent] = group.get<MeshComponent, TransformComponent>(entity);
+            if (meshComponent.Mesh)
+            {
+                meshComponent.Mesh->OnUpdate(ts);
+
+                if (m_SelectedEntity == entity)
+                    SceneRenderer::SubmitSelectedMesh(meshComponent.Mesh, transformComponent.GetTransform());
+                else
+                    SceneRenderer::SubmitMesh(meshComponent.Mesh, transformComponent.GetTransform());
+            }
+        }
+
+        SceneRenderer::EndScene();
+        /////////////////////////////////////////////////////////////////////
+    }
+
     template<typename T>
     void Scene::OnComponentAdded(Entity entity, T& component)
     {

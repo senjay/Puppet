@@ -4,7 +4,7 @@
 #include "Scripts/CameraController.h"
 #include "Scripts/SpriteController.h"
 #include "Scripts/DirectionalLightController.h"
-#include "ImGuiUtils/ImGuiWrapper.h"
+#include "Puppet/ImGui/ImGuiWrapper.h"
 #include <glm/glm.hpp>
 namespace Puppet {
 	extern const std::filesystem::path g_AssetPath;
@@ -53,27 +53,9 @@ namespace Puppet {
 			}
 			case SceneState::Play:
 			{	
-				m_ActiveScene->OnRenderRuntime(ts);
+				m_EditorCamera.OnUpdate(ts);
+				m_ActiveScene->OnRenderRuntimeEditor(ts, m_EditorCamera);
 				break;
-			}
-		}
-
-		{
-			PP_PROFILE_SCOPE("Mouse Pick Read Data");
-			auto [mx, my] = ImGui::GetMousePos();
-			mx -= m_ViewportBounds[0].x;
-			my -= m_ViewportBounds[0].y;
-			glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
-			my = viewportSize.y - my;
-			int mouseX = (int)mx;
-			int mouseY = (int)my;
-			
-			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
-			{
-				//Renderer::WaitAndRender();
-				//int pixelData=SceneRenderer::GetFinalRenderPass()->GetSpecification().TargetFramebuffer->ReadPixel(1, mouseX, mouseY);
-				//m_HoveredEntity = pixelData ==-1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
-				//PP_CORE_INFO("mouse coord:{0},{1}, mouse data:{2}", mouseX, mouseY, pixelData);
 			}
 		}
 	}
@@ -154,6 +136,11 @@ namespace Puppet {
 				ImGui::MenuItem("Content Browser", NULL, &b_ShowContentBrowser);
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Window"))
+			{
+				ImGui::MenuItem("Pass Window", NULL, &b_ShowPassWindow);
+				ImGui::EndMenu();
+			}
 			ImGui::EndMenuBar();
 		}
 		static bool show = true;
@@ -162,19 +149,13 @@ namespace Puppet {
 		m_SceneHierarchyPanel.OnImGuiRender();
 		if(b_ShowContentBrowser)
 			m_ContentBrowserPanel.OnImGuiRender(&b_ShowContentBrowser);
-
+	
 
 		ImGui::Begin("Environment");
 		ImGui::SliderFloat("Skybox LOD", &m_ActiveScene->GetSkyboxLod(), 0.0f, 11.0f);
 		ImGui::AlignTextToFramePadding();
 		ImGuiUtils::BeginPropertyGrid();
-		auto& light = m_ActiveScene->GetLight();
-		ImGuiUtils::Property("Light Direction", light.Direction);
-		ImGuiUtils::Property("Light Radiance", light.Radiance);
-		ImGuiUtils::Property("Light Multiplier", light.Multiplier, 0.05,0.0f, 5.0f);
 		ImGuiUtils::Property("Exposure", m_EditorCamera.GetExposure(), 0.05, 0.0f, 5.0f);
-		ImGuiUtils::Property("Radiance Prefiltering", m_RadiancePrefilter);
-		ImGuiUtils::Property("Env Map Rotation", m_EnvMapRotation, 1, -360.0f, 360.0f);
 		ImGuiUtils::EndPropertyGrid();
 		ImGui::End();
 
@@ -186,12 +167,6 @@ namespace Puppet {
 		auto [rcCnt, rcSize] = Renderer::GetCommandQueueStatus();
 		ImGui::Text("RenderCommand Cnt: %d\n", rcCnt);
 		ImGui::Text("RenderCommand Size: %d Bytes\n", rcSize);
-		auto stats = Renderer2D::GetStats();
-		ImGui::Text("Renderer2D Stats:");
-		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-		ImGui::Text("Quads: %d", stats.QuadCount);
-		ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 		std::string name = "None";
 		if (m_HoveredEntity)
 			name = m_HoveredEntity.GetComponent<TagComponent>().Tag;
@@ -200,6 +175,12 @@ namespace Puppet {
 		ImGui::Text("Vendor: %s", caps.Vendor.c_str());
 		ImGui::Text("Renderer: %s", caps.Renderer.c_str());
 		ImGui::Text("Version: %s", caps.Version.c_str());
+		//auto stats = Renderer2D::GetStats();
+		//ImGui::Text("Renderer2D Stats:");
+		//ImGui::Text("Draw Calls: %d", stats.DrawCalls);
+		//ImGui::Text("Quads: %d", stats.QuadCount);
+		//ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
+		//ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 		ImGui::End();
 
 		UI_Toolbar();
@@ -290,7 +271,10 @@ namespace Puppet {
 
 		ImGui::End();
 		ImGui::PopStyleVar();
-		
+
+		if (b_ShowPassWindow)
+			SceneRenderer::OnImGuiRender(&b_ShowPassWindow);
+
 		ImGui::End();	
 	}
 
@@ -363,7 +347,7 @@ namespace Puppet {
 		if (e.GetMouseButton() == Mouse::ButtonLeft)
 		{
 			//bool check: can use mouse select Entity
-			if (m_ViewportHovered)
+			if (m_ViewportHovered&&!ImGuizmo::IsOver() && m_SceneState != SceneState::Play)
 			{
 				auto [mouseX, mouseY] = GetMouseViewportSpace();
 				if (mouseX > -1.0f && mouseX < 1.0f && mouseY > -1.0f && mouseY < 1.0f)
@@ -408,7 +392,7 @@ namespace Puppet {
 
 										}
 										//m_SelectionContext.push_back({ entity, &submesh, t });
-										break;
+										//break;
 									}
 								}
 							}
@@ -536,6 +520,7 @@ namespace Puppet {
 	void EditorLayer::CreateBindTestScripts()
 	{
 		Entity PrimaryCameraEntity =m_ActiveScene->GetPrimaryCameraEntity();
+		if(PrimaryCameraEntity)
 		PrimaryCameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 		auto view= m_ActiveScene->GetAllEntitiesWith<DirectionalLightComponent>();
 		for (auto entity : view)

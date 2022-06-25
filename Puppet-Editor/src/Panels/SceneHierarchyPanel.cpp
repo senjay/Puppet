@@ -1,12 +1,12 @@
 #include "SceneHierarchyPanel.h"
 #include <filesystem>
-#include <imgui/imgui.h>
-#include <imgui/imgui_internal.h>
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "Puppet/Scene/Components.h"
 #include "Puppet/Math/MathUtils.h"
 #include "Puppet/Utils/PlatformUtils.h"
-#include "../ImGuiUtils/ImGuiWrapper.h"
+#include "Puppet/ImGui/ImGuiWrapper.h"
 namespace Puppet {
 	extern const std::filesystem::path g_AssetPath;
 	glm::mat4 Mat4FromAssimpMat4(const aiMatrix4x4& matrix);

@@ -33,7 +33,7 @@ namespace Puppet {
 		static RendererID GetFinalColorBufferRendererID();
 		static SceneRendererOptions& GetOptions();
 
-		static void OnImGuiRender();
+		static void OnImGuiRender(bool* open);
 	private:
 		static void FlushDrawList();
 		static void ShadowMapPass();

@@ -212,7 +212,8 @@ namespace Puppet {
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, readFrambuffer->GetRendererID());
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_RendererID);
 		glBlitFramebuffer(0, 0, m_Specification.Width, m_Specification.Height, 0, 0,
-			m_Specification.Width, m_Specification.Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			m_Specification.Width, m_Specification.Height, GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT|
+			GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 

@@ -1,6 +1,6 @@
 #pragma once
-#include <imgui/imgui.h>
-#include <imgui/imgui_internal.h>
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
@@ -10,10 +10,28 @@
 #include "Puppet/Utils/PlatformUtils.h"
 namespace Puppet::ImGuiUtils
 {
-    bool InputTextLeft(const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
-    bool TreeNodeExStyle1(const void* str_id, const std::string& name, ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding);
-    bool TreeNodeExStyle2(const void* str_id, const std::string& name, ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding);
-
+    static bool InputTextLeft(const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = NULL, void* user_data = NULL)
+	{
+		ImGui::Text(label);
+		ImGui::SameLine();
+		std::string InputLabel = std::string("##") + std::string(label);
+		return ImGui::InputText(InputLabel.c_str(), buf, buf_size, flags, callback, user_data);
+	}
+	static bool TreeNodeExStyle1(const void* str_id, const std::string& name, ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4.0f, 4.0f });
+		ImGui::Separator();
+		bool open = ImGui::TreeNodeEx((void*)str_id, flags, name.c_str());
+		ImGui::PopStyleVar();
+		return open;
+	}
+	static bool TreeNodeExStyle2(const void* str_id, const std::string& name, ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 2.0f, 2.0f });
+		bool open = ImGui::TreeNodeEx((void*)str_id, flags, name.c_str());
+		ImGui::PopStyleVar();
+		return open;
+	}
     template<typename UIFunc1, typename UIFunc2>
     void DrawTwoUI(UIFunc1 func1, UIFunc2 func2, float ColumnWidth = 100.0f)
     {
